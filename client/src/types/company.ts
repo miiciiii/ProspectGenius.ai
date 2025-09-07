@@ -1,4 +1,6 @@
-export type { FundedCompany, InsertFundedCompany, CompanyFilters, DashboardStats } from "@shared/schema";
+import type { FundedCompany, InsertFundedCompany, CompanyFilters, DashboardStats } from "@shared/schema";
+
+export type { FundedCompany, InsertFundedCompany, CompanyFilters, DashboardStats };
 
 export interface CompanyTableProps {
   companies: FundedCompany[];
@@ -22,6 +24,3 @@ export interface SortConfig {
   field: keyof FundedCompany;
   direction: 'asc' | 'desc';
 }
-
-// Re-export from shared schema
-export type { FundedCompany, InsertFundedCompany, CompanyFilters, DashboardStats } from "@shared/schema";

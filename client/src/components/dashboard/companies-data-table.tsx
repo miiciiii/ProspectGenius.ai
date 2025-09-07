@@ -24,8 +24,8 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
 
   // Sort companies
   const sortedCompanies = [...companies].sort((a, b) => {
-    const aValue = a[sortConfig.field];
-    const bValue = b[sortConfig.field];
+    const aValue = a[sortConfig.field as keyof FundedCompany];
+    const bValue = b[sortConfig.field as keyof FundedCompany];
     
     let comparison = 0;
     

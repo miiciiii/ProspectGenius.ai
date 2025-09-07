@@ -91,6 +91,14 @@ export class MemStorage implements IStorage {
       const fullCompany: FundedCompany = {
         ...company,
         id,
+        domain: company.domain || null,
+        investors: company.investors || null,
+        contactName: company.contactName || null,
+        contactEmail: company.contactEmail || null,
+        linkedin: company.linkedin || null,
+        twitter: company.twitter || null,
+        industry: company.industry || null,
+        status: company.status || "new",
         createdAt: new Date(),
       };
       this.companies.set(id, fullCompany);
@@ -177,6 +185,14 @@ export class MemStorage implements IStorage {
     const company: FundedCompany = {
       ...insertCompany,
       id,
+      domain: insertCompany.domain || null,
+      investors: insertCompany.investors || null,
+      contactName: insertCompany.contactName || null,
+      contactEmail: insertCompany.contactEmail || null,
+      linkedin: insertCompany.linkedin || null,
+      twitter: insertCompany.twitter || null,
+      industry: insertCompany.industry || null,
+      status: insertCompany.status || "new",
       createdAt: new Date(),
     };
     this.companies.set(id, company);
