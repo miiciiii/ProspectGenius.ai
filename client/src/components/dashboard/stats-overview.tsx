@@ -36,7 +36,7 @@ export function StatsOverview() {
   const statCards = [
     {
       title: "Total Companies",
-      value: stats.totalCompanies.toLocaleString(),
+      value: (stats.total_companies ?? 0).toLocaleString(),
       icon: Building,
       iconBg: "bg-accent/10",
       iconColor: "text-accent",
@@ -44,7 +44,7 @@ export function StatsOverview() {
     },
     {
       title: "This Week",
-      value: stats.thisWeek.toString(),
+      value: (stats.this_week ?? 0).toLocaleString(),
       icon: TrendingUp,
       iconBg: "bg-primary/10",
       iconColor: "text-primary",
@@ -52,7 +52,7 @@ export function StatsOverview() {
     },
     {
       title: "Total Funding",
-      value: stats.totalFunding,
+      value: stats.total_funding ?? "0",
       icon: DollarSign,
       iconBg: "bg-orange-100",
       iconColor: "text-orange-600",
@@ -60,7 +60,7 @@ export function StatsOverview() {
     },
     {
       title: "Contacted",
-      value: stats.contacted.toString(),
+      value: (stats.contacted ?? 0).toLocaleString(),
       icon: Mail,
       iconBg: "bg-red-100",
       iconColor: "text-red-600",

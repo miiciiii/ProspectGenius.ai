@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import type { CompanyFilters } from "@/types/company";
+import type { CompanyFilters } from "@shared/schema"; // ✅ unified schema import
 
 interface FilterControlsProps {
   filters: CompanyFilters;
@@ -11,17 +11,16 @@ interface FilterControlsProps {
   filteredCount: number;
 }
 
-export function FilterControls({ 
-  filters, 
-  onFiltersChange, 
-  totalCount, 
-  filteredCount 
+export function FilterControls({
+  filters,
+  onFiltersChange,
+  totalCount,
+  filteredCount,
 }: FilterControlsProps) {
-  
   const handleFilterChange = (key: keyof CompanyFilters, value: string | undefined) => {
     onFiltersChange({
       ...filters,
-      [key]: value || undefined,
+      [key]: value || undefined, // ✅ always undefined, never null
     });
   };
 
@@ -29,13 +28,12 @@ export function FilterControls({
     onFiltersChange({});
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value && value !== "");
+  const hasActiveFilters = Object.values(filters).some((value) => value && value !== "");
 
   return (
     <div className="mb-6">
       <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
-          
           {/* Search */}
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -45,7 +43,7 @@ export function FilterControls({
               type="text"
               placeholder="Search companies..."
               value={filters.search || ""}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
               className="pl-10"
               data-testid="input-search-companies"
             />
@@ -53,11 +51,10 @@ export function FilterControls({
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            
             {/* Date Range Filter */}
             <Select
-              value={filters.dateRange || ""}
-              onValueChange={(value) => handleFilterChange('dateRange', value)}
+              value={filters.date_range || ""}
+              onValueChange={(value) => handleFilterChange("date_range", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-date-range">
                 <SelectValue placeholder="Date Range" />
@@ -72,8 +69,8 @@ export function FilterControls({
 
             {/* Funding Stage Filter */}
             <Select
-              value={filters.fundingStage || ""}
-              onValueChange={(value) => handleFilterChange('fundingStage', value)}
+              value={filters.funding_stage || ""}
+              onValueChange={(value) => handleFilterChange("funding_stage", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-funding-stage">
                 <SelectValue placeholder="All Stages" />
@@ -90,7 +87,7 @@ export function FilterControls({
             {/* Industry Filter */}
             <Select
               value={filters.industry || ""}
-              onValueChange={(value) => handleFilterChange('industry', value)}
+              onValueChange={(value) => handleFilterChange("industry", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-industry">
                 <SelectValue placeholder="All Industries" />
@@ -108,7 +105,7 @@ export function FilterControls({
             {/* Status Filter */}
             <Select
               value={filters.status || ""}
-              onValueChange={(value) => handleFilterChange('status', value)}
+              onValueChange={(value) => handleFilterChange("status", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-status">
                 <SelectValue placeholder="All Status" />

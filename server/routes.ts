@@ -1,19 +1,19 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { companyFiltersSchema, insertFundedCompanySchema } from "@shared/schema";
+import type { CompanyFilters, InsertFundedCompany } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all companies with optional filters
   app.get("/api/companies", async (req, res) => {
     try {
-      const filters = companyFiltersSchema.parse(req.query);
+      const filters = req.query as Partial<CompanyFilters>;
       const companies = await storage.getFilteredFundedCompanies(filters);
       res.json(companies);
     } catch (error) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: "Invalid filter parameters",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -23,16 +23,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const company = await storage.getFundedCompany(id);
-      
+
       if (!company) {
         return res.status(404).json({ message: "Company not found" });
       }
-      
+
       res.json(company);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch company",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -40,13 +40,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new company
   app.post("/api/companies", async (req, res) => {
     try {
-      const companyData = insertFundedCompanySchema.parse(req.body);
+      const companyData = req.body as InsertFundedCompany;
       const company = await storage.createFundedCompany(companyData);
       res.status(201).json(company);
     } catch (error) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: "Invalid company data",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -56,16 +56,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       const company = await storage.updateFundedCompany(id, updates);
       res.json(company);
     } catch (error) {
       if (error instanceof Error && error.message.includes("not found")) {
         return res.status(404).json({ message: error.message });
       }
-      res.status(400).json({ 
+      res.status(400).json({
         message: "Failed to update company",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -80,9 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof Error && error.message.includes("not found")) {
         return res.status(404).json({ message: error.message });
       }
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to delete company",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -93,52 +93,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getDashboardStats();
       res.json(stats);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch dashboard stats",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
-  // Bulk create companies (for data integration)
+  // Bulk create companies
   app.post("/api/companies/bulk", async (req, res) => {
     try {
       const { companies } = req.body;
-      
+
       if (!Array.isArray(companies)) {
         return res.status(400).json({ message: "Expected array of companies" });
       }
 
-      const validatedCompanies = companies.map(company => 
-        insertFundedCompanySchema.parse(company)
+      const createdCompanies = await storage.bulkCreateFundedCompanies(
+        companies as InsertFundedCompany[]
       );
-      
-      const createdCompanies = await storage.bulkCreateFundedCompanies(validatedCompanies);
       res.status(201).json(createdCompanies);
     } catch (error) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: "Invalid company data in bulk create",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
-  // Export companies as CSV data
+  // Export companies as CSV-friendly data
   app.get("/api/companies/export", async (req, res) => {
     try {
-      const filters = companyFiltersSchema.parse(req.query);
+      const filters = req.query as Partial<CompanyFilters>;
       const companies = await storage.getFilteredFundedCompanies(filters);
-      
-      // Return CSV data structure for frontend to process
-      const csvData = companies.map(company => ({
-        "Company Name": company.companyName,
+
+      const csvData = companies.map((company) => ({
+        "Company Name": company.company_name,
         "Domain": company.domain || "",
-        "Funding Date": company.fundingDate,
-        "Funding Stage": company.fundingStage,
-        "Funding Amount": company.fundingAmount,
+        "Funding Date": company.funding_date,
+        "Funding Stage": company.funding_stage,
+        "Funding Amount": company.funding_amount,
         "Investors": company.investors || "",
-        "Contact Name": company.contactName || "",
-        "Contact Email": company.contactEmail || "",
+        "Contact Name": company.contact_name || "",
+        "Contact Email": company.contact_email || "",
         "LinkedIn": company.linkedin || "",
         "Twitter": company.twitter || "",
         "Industry": company.industry || "",
@@ -148,9 +145,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ data: csvData });
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to export companies",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });

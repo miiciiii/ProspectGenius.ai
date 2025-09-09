@@ -1,36 +1,13 @@
 import { useCompanies } from "@/hooks/use-companies";
-import { format, isAfter, subDays } from "date-fns";
-import type { FundedCompany } from "@/types/company";
+import { subDays, isAfter } from "date-fns";
+import type { FundedCompany, CompanyFilters } from "@shared/schema";
 
 export function HighlightsSection() {
-  const { data: allCompanies } = useCompanies();
+  // Instead of fetching ALL companies, fetch targeted subsets
+  const { data: newThisWeek = [] } = useCompanies({ date_range: "week" });
+  const { data: followUpRequired = [] } = useCompanies({ status: "follow-up" });
 
-  if (!allCompanies) {
-    return (
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Highlights</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
-            <p className="text-muted-foreground">Loading highlights...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const now = new Date();
-  const oneWeekAgo = subDays(now, 7);
-
-  // Filter companies for different highlight categories
-  const newThisWeek = allCompanies.filter(company => 
-    isAfter(new Date(company.fundingDate), oneWeekAgo)
-  );
-
-  const followUpRequired = allCompanies.filter(company => 
-    company.status === "follow-up" || company.status === "contacted"
-  );
-
-  // Mock data updates - in real app this would come from a separate API
+  // Mock data updates - keep for now
   const dataUpdates = [
     { source: "Y Combinator", description: "45 new companies added", timestamp: "1hr ago" },
     { source: "Datagma API", description: "Contact data enriched", timestamp: "3hrs ago" },
@@ -45,17 +22,17 @@ export function HighlightsSection() {
       bgColor: "bg-accent",
       textColor: "text-accent-foreground",
       dotColor: "bg-accent",
-      testId: "highlights-new-week"
+      testId: "highlights-new-week",
     },
     {
-      title: "Follow Up Required", 
+      title: "Follow Up Required",
       count: followUpRequired.length,
       companies: followUpRequired.slice(0, 3),
       bgColor: "bg-orange-100",
       textColor: "text-orange-800",
       dotColor: "bg-orange-500",
-      testId: "highlights-follow-up"
-    }
+      testId: "highlights-follow-up",
+    },
   ];
 
   return (
@@ -65,13 +42,13 @@ export function HighlightsSection() {
         
         {/* New This Week & Follow Up sections */}
         {highlightSections.map((section) => (
-          <div 
+          <div
             key={section.title}
             className="bg-card rounded-lg p-6 border border-border shadow-sm"
             data-testid={section.testId}
           >
             <div className="flex items-center space-x-3 mb-4">
-              <div className={`w-2 h-2 ${section.dotColor} rounded-full`}></div>
+              <div className={`w-2 h-2 ${section.dotColor} rounded-full`} />
               <h3 className="font-medium text-foreground">{section.title}</h3>
               <span className={`${section.bgColor} ${section.textColor} text-xs font-medium px-2 py-1 rounded-full`}>
                 {section.count}
@@ -94,7 +71,7 @@ export function HighlightsSection() {
         ))}
 
         {/* Data Updates section */}
-        <div 
+        <div
           className="bg-card rounded-lg p-6 border border-border shadow-sm"
           data-testid="highlights-data-updates"
         >
@@ -107,8 +84,8 @@ export function HighlightsSection() {
           </div>
           <div className="space-y-3">
             {dataUpdates.map((update, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="flex items-center justify-between p-3 bg-secondary/50 rounded-md"
                 data-testid={`update-${index}`}
               >
@@ -132,22 +109,29 @@ interface CompanyHighlightItemProps {
 }
 
 function CompanyHighlightItem({ company, showFollowUp }: CompanyHighlightItemProps) {
-  const daysAgo = Math.floor((Date.now() - new Date(company.fundingDate).getTime()) / (1000 * 60 * 60 * 24));
-  const timeAgo = daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+  const daysAgo = Math.floor((Date.now() - new Date(company.funding_date).getTime()) / (1000 * 60 * 60 * 24));
+  const timeAgo =
+    daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
 
   return (
-    <div 
+    <div
       className="flex items-center justify-between p-3 bg-secondary/50 rounded-md"
       data-testid={`company-highlight-${company.id}`}
     >
       <div>
-        <p className="font-medium text-sm text-foreground">{company.companyName}</p>
+        <p className="font-medium text-sm text-foreground">{company.company_name}</p>
         <p className="text-xs text-muted-foreground">
-          {showFollowUp ? `Contacted ${timeAgo}` : `${company.fundingStage} • ${company.fundingAmount ? `$${(company.fundingAmount / 1000000).toFixed(1)}M` : 'Amount TBD'}`}
+          {showFollowUp
+            ? `Contacted ${timeAgo}`
+            : `${company.funding_stage} • ${
+                company.funding_amount
+                  ? `$${(company.funding_amount / 1000000).toFixed(1)}M`
+                  : "Amount TBD"
+              }`}
         </p>
       </div>
       {showFollowUp ? (
-        <button 
+        <button
           className="text-xs text-primary hover:underline"
           data-testid={`button-follow-up-${company.id}`}
         >

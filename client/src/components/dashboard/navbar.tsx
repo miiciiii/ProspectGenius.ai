@@ -11,7 +11,7 @@ export function Navbar() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">DG</span>
               </div>
-              <span className="font-semibold text-lg text-foreground">Deal Genius</span>
+              <span className="font-semibold text-lg text-foreground">DealGenius | AgentGenius.ai</span>
             </div>
             
             {/* Navigation Links */}
@@ -57,9 +57,9 @@ export function Navbar() {
             </button>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                <span className="text-accent-foreground text-sm font-medium">JS</span>
+                <span className="text-accent-foreground text-sm font-medium">A</span>
               </div>
-              <span className="text-sm font-medium text-foreground hidden sm:block">John Smith</span>
+              <span className="text-sm font-medium text-foreground hidden sm:block">Admin</span>
             </div>
           </div>
         </div>

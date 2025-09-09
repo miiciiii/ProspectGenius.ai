@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useCompanies } from "@/hooks/use-companies";
 import { useExportCSV } from "@/hooks/use-export-csv";
 import { useQueryClient } from "@tanstack/react-query";
-import type { CompanyFilters } from "@/types/company";
+import type { CompanyFilters } from "@shared/schema";
 
 export default function Dashboard() {
   const [filters, setFilters] = useState<CompanyFilters>({});
@@ -44,7 +44,7 @@ export default function Dashboard() {
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Deal Dashboard</h1>
+                  <h1 className="text-2xl font-bold text-foreground">DealGenius Dashboard</h1>
                   <p className="text-muted-foreground mt-1">
                     Track newly funded startups and investment opportunities
                   </p>
