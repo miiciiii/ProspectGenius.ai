@@ -1,4 +1,4 @@
-import { Bell } from "lucide-react";
+import { Bell, Plus, Search } from "lucide-react";
 
 export function Navbar() {
   return (
@@ -6,6 +6,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
+
             {/* Logo */}
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -13,7 +14,7 @@ export function Navbar() {
               </div>
               <span className="font-semibold text-lg text-foreground">DealGenius | AgentGenius.ai</span>
             </div>
-            
+
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-6">
               <a 
@@ -46,16 +47,37 @@ export function Navbar() {
               </a>
             </div>
           </div>
-          
+
           {/* Right side */}
           <div className="flex items-center space-x-4">
+
+            {/* Search (⌘K style trigger) */}
+            <button 
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
+              data-testid="button-search"
+            >
+              <Search className="hero-icon" />
+            </button>
+
+            {/* Quick Add */}
+            <button 
+              className="flex items-center space-x-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+              data-testid="button-quick-add"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New</span>
+            </button>
+
+            {/* Notifications */}
             <button 
               className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
               data-testid="button-notifications"
             >
               <Bell className="hero-icon" />
             </button>
-            <div className="flex items-center space-x-2">
+
+            {/* User menu */}
+            <div className="flex items-center space-x-2 cursor-pointer">
               <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
                 <span className="text-accent-foreground text-sm font-medium">A</span>
               </div>
