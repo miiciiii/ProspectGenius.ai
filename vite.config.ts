@@ -5,7 +5,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   plugins: [react(), runtimeErrorOverlay()],
-  base: process.env.VITE_BASE_PATH || "/",
+  base: process.env.VITE_BASE_PATH || "/Deal-Genius",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
