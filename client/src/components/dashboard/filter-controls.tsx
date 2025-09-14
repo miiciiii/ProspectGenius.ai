@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import type { CompanyFilters } from "@shared/schema"; // ✅ unified schema import
+import type { CompanyFilters } from "@shared/schema";
 
 interface FilterControlsProps {
   filters: CompanyFilters;
@@ -17,10 +17,38 @@ export function FilterControls({
   totalCount,
   filteredCount,
 }: FilterControlsProps) {
+  // Maps for normalization
+  const fundingStageMap: Record<string, string> = {
+    "pre-seed": "Pre-Seed",
+    "seed": "Seed",
+    "series-a": "Series A",
+    "series-b": "Series B",
+    "series-c": "Series C",
+  };
+
+  const statusMap: Record<string, string> = {
+    "new": "new",
+    "contacted": "contacted",
+    "follow-up": "follow-up",
+  };
+
   const handleFilterChange = (key: keyof CompanyFilters, value: string | undefined) => {
+    let normalizedValue = value;
+
+    if (key === "funding_stage" && value) {
+      // Convert display value back to internal key
+      const keyEntry = Object.entries(fundingStageMap).find(([, display]) => display === value);
+      normalizedValue = keyEntry ? keyEntry[0] : value;
+    }
+
+    if (key === "status" && value) {
+      const keyEntry = Object.entries(statusMap).find(([, display]) => display === value);
+      normalizedValue = keyEntry ? keyEntry[0] : value;
+    }
+
     onFiltersChange({
       ...filters,
-      [key]: value || undefined, // ✅ always undefined, never null
+      [key]: normalizedValue || undefined,
     });
   };
 
@@ -37,7 +65,7 @@ export function FilterControls({
           {/* Search */}
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="hero-icon text-muted-foreground" />
+              <Search className="text-muted-foreground" />
             </div>
             <Input
               type="text"
@@ -69,18 +97,18 @@ export function FilterControls({
 
             {/* Funding Stage Filter */}
             <Select
-              value={filters.funding_stage || ""}
+              value={filters.funding_stage ? fundingStageMap[filters.funding_stage] : ""}
               onValueChange={(value) => handleFilterChange("funding_stage", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-funding-stage">
                 <SelectValue placeholder="All Stages" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pre-seed">Pre-Seed</SelectItem>
-                <SelectItem value="seed">Seed</SelectItem>
-                <SelectItem value="series-a">Series A</SelectItem>
-                <SelectItem value="series-b">Series B</SelectItem>
-                <SelectItem value="series-c">Series C+</SelectItem>
+                {Object.values(fundingStageMap).map((stage) => (
+                  <SelectItem key={stage} value={stage}>
+                    {stage}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -104,16 +132,18 @@ export function FilterControls({
 
             {/* Status Filter */}
             <Select
-              value={filters.status || ""}
+              value={filters.status ? statusMap[filters.status] : ""}
               onValueChange={(value) => handleFilterChange("status", value)}
             >
               <SelectTrigger className="w-40" data-testid="select-status">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="follow-up">Follow Up</SelectItem>
+                {Object.values(statusMap).map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -126,7 +156,7 @@ export function FilterControls({
                 className="flex items-center"
                 data-testid="button-clear-filters"
               >
-                <X className="hero-icon mr-1" />
+                <X className="mr-1" />
                 Clear Filters
               </Button>
             )}

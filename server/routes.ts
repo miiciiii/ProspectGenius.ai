@@ -4,11 +4,40 @@ import { storage } from "./storage";
 import type { CompanyFilters, InsertFundedCompany } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  /** -----------------------------
+   * Companies
+   * ----------------------------- */
   // Get all companies with optional filters
   app.get("/api/companies", async (req, res) => {
     try {
       const filters = req.query as Partial<CompanyFilters>;
-      const companies = await storage.getFilteredFundedCompanies(filters);
+
+      // Normalize filters
+      const normalizedFilters: Partial<CompanyFilters> = { ...filters };
+
+      if (filters.funding_stage) {
+        const stageMap: Record<string, string> = {
+          "pre-seed": "Pre-Seed",
+          "seed": "Seed",
+          "series-a": "Series A",
+          "series-b": "Series B",
+          "series-c": "Series C",
+        };
+        normalizedFilters.funding_stage =
+          stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
+      }
+
+      if (filters.status) {
+        const statusMap: Record<string, string> = {
+          "new": "new",
+          "contacted": "contacted",
+          "follow-up": "follow-up",
+        };
+        normalizedFilters.status =
+          statusMap[filters.status.toLowerCase()] || filters.status;
+      }
+
+      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
       res.json(companies);
     } catch (error) {
       res.status(400).json({
@@ -41,7 +70,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/companies", async (req, res) => {
     try {
       const companyData = req.body as InsertFundedCompany;
-      const company = await storage.createFundedCompany(companyData);
+
+      // Ensure social_media defaults to empty array
+      const payload = { ...companyData, social_media: companyData.social_media ?? [] };
+
+      const company = await storage.createFundedCompany(payload);
       res.status(201).json(company);
     } catch (error) {
       res.status(400).json({
@@ -56,6 +89,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updates = req.body;
+
+      // Ensure social_media remains an array if provided
+      if (updates.social_media && !Array.isArray(updates.social_media)) {
+        updates.social_media = [];
+      }
 
       const company = await storage.updateFundedCompany(id, updates);
       res.json(company);
@@ -87,7 +125,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get dashboard statistics
+  // Bulk create companies
+  app.post("/api/companies/bulk", async (req, res) => {
+    try {
+      const { companies } = req.body;
+
+      if (!Array.isArray(companies)) {
+        return res.status(400).json({ message: "Expected array of companies" });
+      }
+
+      const payload = companies.map((c: InsertFundedCompany) => ({
+        ...c,
+        social_media: c.social_media ?? [],
+      }));
+
+      const createdCompanies = await storage.bulkCreateFundedCompanies(payload);
+      res.status(201).json(createdCompanies);
+    } catch (error) {
+      res.status(400).json({
+        message: "Invalid company data in bulk create",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /** -----------------------------
+   * Dashboard
+   * ----------------------------- */
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
       const stats = await storage.getDashboardStats();
@@ -100,47 +164,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk create companies
-  app.post("/api/companies/bulk", async (req, res) => {
-    try {
-      const { companies } = req.body;
-
-      if (!Array.isArray(companies)) {
-        return res.status(400).json({ message: "Expected array of companies" });
-      }
-
-      const createdCompanies = await storage.bulkCreateFundedCompanies(
-        companies as InsertFundedCompany[]
-      );
-      res.status(201).json(createdCompanies);
-    } catch (error) {
-      res.status(400).json({
-        message: "Invalid company data in bulk create",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  });
-
-  // Export companies as CSV-friendly data
+  /** -----------------------------
+   * Export
+   * ----------------------------- */
   app.get("/api/companies/export", async (req, res) => {
     try {
       const filters = req.query as Partial<CompanyFilters>;
-      const companies = await storage.getFilteredFundedCompanies(filters);
+
+      // Normalize filters like in getCompanies
+      const normalizedFilters: Partial<CompanyFilters> = { ...filters };
+
+      if (filters.funding_stage) {
+        const stageMap: Record<string, string> = {
+          "pre-seed": "Pre-Seed",
+          "seed": "Seed",
+          "series-a": "Series A",
+          "series-b": "Series B",
+          "series-c": "Series C",
+        };
+        normalizedFilters.funding_stage =
+          stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
+      }
+
+      if (filters.status) {
+        const statusMap: Record<string, string> = {
+          "new": "new",
+          "contacted": "contacted",
+          "follow-up": "follow-up",
+        };
+        normalizedFilters.status =
+          statusMap[filters.status.toLowerCase()] || filters.status;
+      }
+
+      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
 
       const csvData = companies.map((company) => ({
         "Company Name": company.company_name,
         "Domain": company.domain || "",
         "Funding Date": company.funding_date,
         "Funding Stage": company.funding_stage,
-        "Funding Amount": company.funding_amount,
+        "Funding Amount": company.funding_amount || "",
         "Investors": company.investors || "",
         "Contact Name": company.contact_name || "",
         "Contact Email": company.contact_email || "",
-        "LinkedIn": company.linkedin || "",
-        "Twitter": company.twitter || "",
+        "Social Media": (company.social_media ?? []).join(", "),
         "Industry": company.industry || "",
         "Status": company.status,
-        "Source": company.source,
+        "Source": company.source || "",
       }));
 
       res.json({ data: csvData });
