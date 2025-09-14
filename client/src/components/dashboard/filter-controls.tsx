@@ -32,8 +32,8 @@ export function FilterControls({
 
   return (
     <div className="mb-6">
-      <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
+      <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -44,19 +44,19 @@ export function FilterControls({
               placeholder="Search companies..."
               value={filters.search || ""}
               onChange={(e) => handleFilterChange("search", e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md"
               data-testid="input-search-companies"
             />
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Date Range Filter */}
             <Select
               value={filters.date_range || ""}
               onValueChange={(value) => handleFilterChange("date_range", value)}
             >
-              <SelectTrigger className="w-40" data-testid="select-date-range">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-date-range">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
@@ -72,7 +72,7 @@ export function FilterControls({
               value={filters.funding_stage || ""}
               onValueChange={(value) => handleFilterChange("funding_stage", value)}
             >
-              <SelectTrigger className="w-40" data-testid="select-funding-stage">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-funding-stage">
                 <SelectValue placeholder="All Stages" />
               </SelectTrigger>
               <SelectContent>
@@ -89,7 +89,7 @@ export function FilterControls({
               value={filters.industry || ""}
               onValueChange={(value) => handleFilterChange("industry", value)}
             >
-              <SelectTrigger className="w-40" data-testid="select-industry">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-industry">
                 <SelectValue placeholder="All Industries" />
               </SelectTrigger>
               <SelectContent>
@@ -107,7 +107,7 @@ export function FilterControls({
               value={filters.status || ""}
               onValueChange={(value) => handleFilterChange("status", value)}
             >
-              <SelectTrigger className="w-40" data-testid="select-status">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-status">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -123,7 +123,7 @@ export function FilterControls({
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="flex items-center"
+                className="flex items-center hover:bg-secondary hover:border-accent hover:text-accent transition-all duration-200 hover:scale-105 hover:shadow-md"
                 data-testid="button-clear-filters"
               >
                 <X className="hero-icon mr-1" />

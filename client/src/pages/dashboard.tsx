@@ -54,6 +54,7 @@ export default function Dashboard() {
                     variant="outline"
                     onClick={handleExportCSV}
                     disabled={exportCSV.isPending}
+                    className="hover:bg-secondary hover:border-accent hover:text-accent transition-all duration-200 hover:scale-105 hover:shadow-md"
                     data-testid="button-export-csv"
                   >
                     <Upload className="hero-icon mr-2" />
@@ -61,6 +62,7 @@ export default function Dashboard() {
                   </Button>
                   <Button 
                     onClick={handleRefreshData}
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 transition-all duration-200 hover:scale-105 hover:shadow-lg"
                     data-testid="button-refresh-data"
                   >
                     <RefreshCw className="hero-icon mr-2" />
