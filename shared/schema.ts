@@ -9,7 +9,7 @@ export interface FundedCompany {
   investors?: string | null;
   contact_name?: string | null;
   contact_email?: string | null;
-  social_media?: string[] | null; // updated from linkedin/twitter
+  social_media?: string[] | null;
   industry?: string | null;
   status: 'new' | 'contacted' | 'follow-up' | string;
   created_at: string; // ISO timestamp
