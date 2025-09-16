@@ -1,6 +1,18 @@
 import { Bell, Plus, Search } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 export function Navbar() {
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const navLinks = [
+    { path: "/dashboard", label: "Dashboard", testId: "nav-dashboard" },
+    { path: "/companies", label: "Companies", testId: "nav-companies" },
+    { path: "/analytics", label: "Analytics", testId: "nav-analytics" },
+    { path: "/sources", label: "Sources", testId: "nav-sources" },
+  ];
+
   return (
     <nav className="bg-card border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -8,60 +20,47 @@ export function Navbar() {
           <div className="flex items-center space-x-8">
 
             {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center hover:bg-accent/90 transition-all duration-200 hover:scale-105">
-                <span className="text-accent-foreground font-bold text-sm">DG</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">PG</span>
               </div>
-              <span className="font-semibold text-lg text-foreground">DealGenius Dashboard</span>
+              <span className="font-semibold text-lg text-foreground">
+                ProspectGenius | AgentGenius.ai
+              </span>
             </div>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-6">
-              <a 
-                href="#" 
-                className="text-accent font-medium border-b-2 border-accent pb-0.5 hover:text-accent/80 transition-all duration-200"
-                data-testid="nav-dashboard"
-              >
-                Dashboard
-              </a>
-              <a 
-                href="#" 
-                className="text-muted-foreground hover:text-foreground hover:text-accent transition-all duration-200 hover:scale-105"
-                data-testid="nav-companies"
-              >
-                Companies
-              </a>
-              <a 
-                href="#" 
-                className="text-muted-foreground hover:text-foreground hover:text-accent transition-all duration-200 hover:scale-105"
-                data-testid="nav-analytics"
-              >
-                Analytics
-              </a>
-              <a 
-                href="#" 
-                className="text-muted-foreground hover:text-foreground hover:text-accent transition-all duration-200 hover:scale-105"
-                data-testid="nav-sources"
-              >
-                Sources
-              </a>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-testid={link.testId}
+                  className={`${
+                    isActive(link.path)
+                      ? "text-primary font-medium border-b-2 border-primary pb-0.5"
+                      : "text-muted-foreground hover:text-foreground transition-colors"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-
-            {/* Search (⌘K style trigger) */}
-            <button 
-              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-all duration-200 hover:scale-110"
+            {/* Search */}
+            <button
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
               data-testid="button-search"
             >
               <Search className="hero-icon" />
             </button>
 
             {/* Quick Add */}
-            <button 
-              className="flex items-center space-x-1 bg-accent text-accent-foreground px-3 py-1.5 rounded-md hover:bg-accent/90 transition-all duration-200 hover:scale-105 hover:shadow-lg text-sm font-medium"
+            <button
+              className="flex items-center space-x-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
               data-testid="button-quick-add"
             >
               <Plus className="w-4 h-4" />
@@ -69,8 +68,8 @@ export function Navbar() {
             </button>
 
             {/* Notifications */}
-            <button 
-              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-all duration-200 hover:scale-110"
+            <button
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
               data-testid="button-notifications"
             >
               <Bell className="hero-icon" />

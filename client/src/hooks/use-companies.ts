@@ -3,15 +3,50 @@ import { Api } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import type { FundedCompany, InsertFundedCompany, CompanyFilters } from "@shared/schema";
 
-// Queries
+/** -----------------------------
+ * Normalize filter values to match DB/API
+ * ----------------------------- */
+function normalizeFilters(filters?: CompanyFilters): CompanyFilters | undefined {
+  if (!filters) return undefined;
+
+  const fundingStageMap: Record<string, string> = {
+    "pre-seed": "Pre-Seed",
+    "seed": "Seed",
+    "series-a": "Series A",
+    "series-b": "Series B",
+    "series-c": "Series C",
+  };
+
+  const statusMap: Record<string, string> = {
+    "new": "new",
+    "contacted": "contacted",
+    "follow-up": "follow-up",
+  };
+
+  return {
+    ...filters,
+    funding_stage: filters.funding_stage
+      ? fundingStageMap[filters.funding_stage.toLowerCase()] ?? filters.funding_stage
+      : undefined,
+    status: filters.status
+      ? statusMap[filters.status.toLowerCase()] ?? filters.status
+      : undefined,
+  };
+}
+
+/** -----------------------------
+ * Queries
+ * ----------------------------- */
 export function useCompanies(filters?: CompanyFilters) {
+  const normalizedFilters = normalizeFilters(filters);
+
   return useQuery({
-    queryKey: ['/api/companies', filters],
+    queryKey: ["/api/companies", normalizedFilters],
     queryFn: async () => {
-      const companies = await Api.getCompanies(filters);
+      const companies = await Api.getCompanies(normalizedFilters);
       return companies as FundedCompany[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -27,11 +62,13 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ["/api/dashboard/stats"],
     queryFn: () => Api.getDashboardStats(),
-    staleTime: 2 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
-// Mutations
+/** -----------------------------
+ * Mutations
+ * ----------------------------- */
 export function useCreateCompany() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -55,7 +92,7 @@ export function useUpdateCompany() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<FundedCompany> }) =>
       Api.updateCompany(id, updates),
-    onSuccess: (updatedCompany) => {
+    onSuccess: (updatedCompany: FundedCompany) => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies", updatedCompany.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
@@ -88,7 +125,7 @@ export function useBulkCreateCompanies() {
 
   return useMutation({
     mutationFn: (companies: InsertFundedCompany[]) => Api.bulkCreateCompanies(companies),
-    onSuccess: (createdCompanies) => {
+    onSuccess: (createdCompanies: FundedCompany[]) => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({

@@ -14,12 +14,12 @@ var supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 // server/storage.ts
 var SupabaseStorage = class {
   async getFundedCompany(id) {
-    const { data, error } = await supabase.from("funded_companies").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await supabase.from("funded_companies_production").select("*").eq("id", id).maybeSingle();
     if (error) throw error;
     return data ?? void 0;
   }
   async getAllFundedCompanies(filters) {
-    let query = supabase.from("funded_companies").select("*").order("funding_date", { ascending: false });
+    let query = supabase.from("funded_companies_production").select("*").order("funding_date", { ascending: false });
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== void 0) {
@@ -32,7 +32,7 @@ var SupabaseStorage = class {
     return data ?? [];
   }
   async getFilteredFundedCompanies(filters) {
-    let query = supabase.from("funded_companies").select("*");
+    let query = supabase.from("funded_companies_production").select("*");
     if (filters.search) {
       query = query.ilike("company_name", `%${filters.search}%`);
     }
@@ -50,21 +50,21 @@ var SupabaseStorage = class {
     return data ?? [];
   }
   async createFundedCompany(company) {
-    const { data, error } = await supabase.from("funded_companies").insert(company).select().single();
+    const { data, error } = await supabase.from("funded_companies_production").insert(company).select().single();
     if (error) throw error;
     return data;
   }
   async updateFundedCompany(id, updates) {
-    const { data, error } = await supabase.from("funded_companies").update(updates).eq("id", id).select().single();
+    const { data, error } = await supabase.from("funded_companies_production").update(updates).eq("id", id).select().single();
     if (error) throw error;
     return data;
   }
   async deleteFundedCompany(id) {
-    const { error } = await supabase.from("funded_companies").delete().eq("id", id);
+    const { error } = await supabase.from("funded_companies_production").delete().eq("id", id);
     if (error) throw error;
   }
   async getDashboardStats() {
-    const { data, error } = await supabase.from("funded_companies").select("*");
+    const { data, error } = await supabase.from("funded_companies_production").select("*");
     if (error) throw error;
     const companies = data ?? [];
     const now = /* @__PURE__ */ new Date();
@@ -94,7 +94,7 @@ var SupabaseStorage = class {
     return `$${amount}`;
   }
   async bulkCreateFundedCompanies(companies) {
-    const { data, error } = await supabase.from("funded_companies").insert(companies).select();
+    const { data, error } = await supabase.from("funded_companies_production").insert(companies).select();
     if (error) throw error;
     return data ?? [];
   }
@@ -106,7 +106,26 @@ async function registerRoutes(app2) {
   app2.get("/api/companies", async (req, res) => {
     try {
       const filters = req.query;
-      const companies = await storage.getFilteredFundedCompanies(filters);
+      const normalizedFilters = { ...filters };
+      if (filters.funding_stage) {
+        const stageMap = {
+          "pre-seed": "Pre-Seed",
+          "seed": "Seed",
+          "series-a": "Series A",
+          "series-b": "Series B",
+          "series-c": "Series C"
+        };
+        normalizedFilters.funding_stage = stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
+      }
+      if (filters.status) {
+        const statusMap = {
+          "new": "new",
+          "contacted": "contacted",
+          "follow-up": "follow-up"
+        };
+        normalizedFilters.status = statusMap[filters.status.toLowerCase()] || filters.status;
+      }
+      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
       res.json(companies);
     } catch (error) {
       res.status(400).json({
@@ -133,7 +152,8 @@ async function registerRoutes(app2) {
   app2.post("/api/companies", async (req, res) => {
     try {
       const companyData = req.body;
-      const company = await storage.createFundedCompany(companyData);
+      const payload = { ...companyData, social_media: companyData.social_media ?? [] };
+      const company = await storage.createFundedCompany(payload);
       res.status(201).json(company);
     } catch (error) {
       res.status(400).json({
@@ -146,6 +166,9 @@ async function registerRoutes(app2) {
     try {
       const { id } = req.params;
       const updates = req.body;
+      if (updates.social_media && !Array.isArray(updates.social_media)) {
+        updates.social_media = [];
+      }
       const company = await storage.updateFundedCompany(id, updates);
       res.json(company);
     } catch (error) {
@@ -173,6 +196,25 @@ async function registerRoutes(app2) {
       });
     }
   });
+  app2.post("/api/companies/bulk", async (req, res) => {
+    try {
+      const { companies } = req.body;
+      if (!Array.isArray(companies)) {
+        return res.status(400).json({ message: "Expected array of companies" });
+      }
+      const payload = companies.map((c) => ({
+        ...c,
+        social_media: c.social_media ?? []
+      }));
+      const createdCompanies = await storage.bulkCreateFundedCompanies(payload);
+      res.status(201).json(createdCompanies);
+    } catch (error) {
+      res.status(400).json({
+        message: "Invalid company data in bulk create",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
   app2.get("/api/dashboard/stats", async (req, res) => {
     try {
       const stats = await storage.getDashboardStats();
@@ -184,41 +226,42 @@ async function registerRoutes(app2) {
       });
     }
   });
-  app2.post("/api/companies/bulk", async (req, res) => {
-    try {
-      const { companies } = req.body;
-      if (!Array.isArray(companies)) {
-        return res.status(400).json({ message: "Expected array of companies" });
-      }
-      const createdCompanies = await storage.bulkCreateFundedCompanies(
-        companies
-      );
-      res.status(201).json(createdCompanies);
-    } catch (error) {
-      res.status(400).json({
-        message: "Invalid company data in bulk create",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
   app2.get("/api/companies/export", async (req, res) => {
     try {
       const filters = req.query;
-      const companies = await storage.getFilteredFundedCompanies(filters);
+      const normalizedFilters = { ...filters };
+      if (filters.funding_stage) {
+        const stageMap = {
+          "pre-seed": "Pre-Seed",
+          "seed": "Seed",
+          "series-a": "Series A",
+          "series-b": "Series B",
+          "series-c": "Series C"
+        };
+        normalizedFilters.funding_stage = stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
+      }
+      if (filters.status) {
+        const statusMap = {
+          "new": "new",
+          "contacted": "contacted",
+          "follow-up": "follow-up"
+        };
+        normalizedFilters.status = statusMap[filters.status.toLowerCase()] || filters.status;
+      }
+      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
       const csvData = companies.map((company) => ({
         "Company Name": company.company_name,
         "Domain": company.domain || "",
         "Funding Date": company.funding_date,
         "Funding Stage": company.funding_stage,
-        "Funding Amount": company.funding_amount,
+        "Funding Amount": company.funding_amount || "",
         "Investors": company.investors || "",
         "Contact Name": company.contact_name || "",
         "Contact Email": company.contact_email || "",
-        "LinkedIn": company.linkedin || "",
-        "Twitter": company.twitter || "",
+        "Social Media": (company.social_media ?? []).join(", "),
         "Industry": company.industry || "",
         "Status": company.status,
-        "Source": company.source
+        "Source": company.source || ""
       }));
       res.json({ data: csvData });
     } catch (error) {
@@ -245,7 +288,7 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [react(), runtimeErrorOverlay()],
-  base: process.env.VITE_BASE_PATH || "/Deal-Genius",
+  base: "./",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -255,7 +298,6 @@ var vite_config_default = defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    // put frontend in dist/public instead of dist/
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     rollupOptions: {

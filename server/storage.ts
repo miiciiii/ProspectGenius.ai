@@ -25,7 +25,7 @@ export interface IStorage {
 export class SupabaseStorage implements IStorage {
   async getFundedCompany(id: string) {
     const { data, error } = await supabase
-      .from("funded_companies")
+      .from("funded_companies_production")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -35,7 +35,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getAllFundedCompanies(filters?: Partial<FundedCompany>) {
-    let query = supabase.from("funded_companies").select("*").order("funding_date", { ascending: false });
+    let query = supabase.from("funded_companies_production").select("*").order("funding_date", { ascending: false });
 
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -52,7 +52,7 @@ export class SupabaseStorage implements IStorage {
 
 
   async getFilteredFundedCompanies(filters: CompanyFilters) {
-    let query = supabase.from("funded_companies").select("*");
+    let query = supabase.from("funded_companies_production").select("*");
 
     if (filters.search) {
       query = query.ilike("company_name", `%${filters.search}%`);
@@ -74,7 +74,7 @@ export class SupabaseStorage implements IStorage {
 
   async createFundedCompany(company: InsertFundedCompany) {
     const { data, error } = await supabase
-      .from("funded_companies")
+      .from("funded_companies_production")
       .insert(company)
       .select()
       .single();
@@ -85,7 +85,7 @@ export class SupabaseStorage implements IStorage {
 
   async updateFundedCompany(id: string, updates: Partial<FundedCompany>) {
     const { data, error } = await supabase
-      .from("funded_companies")
+      .from("funded_companies_production")
       .update(updates)
       .eq("id", id)
       .select()
@@ -96,12 +96,12 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteFundedCompany(id: string) {
-    const { error } = await supabase.from("funded_companies").delete().eq("id", id);
+    const { error } = await supabase.from("funded_companies_production").delete().eq("id", id);
     if (error) throw error;
   }
 
   async getDashboardStats(): Promise<DashboardStats> {
-    const { data, error } = await supabase.from("funded_companies").select("*");
+    const { data, error } = await supabase.from("funded_companies_production").select("*");
     if (error) throw error;
 
     const companies = (data ?? []) as FundedCompany[];
@@ -139,7 +139,7 @@ export class SupabaseStorage implements IStorage {
 
   async bulkCreateFundedCompanies(companies: InsertFundedCompany[]) {
     const { data, error } = await supabase
-      .from("funded_companies")
+      .from("funded_companies_production")
       .insert(companies)
       .select();
 

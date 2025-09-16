@@ -3,8 +3,9 @@ import { useDashboardStats } from "@/hooks/use-companies";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function StatsOverview() {
-  const { data: stats, isLoading } = useDashboardStats();
+  const { data: stats, isLoading, isError } = useDashboardStats();
 
+  // Loading skeleton
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -23,7 +24,8 @@ export function StatsOverview() {
     );
   }
 
-  if (!stats) {
+  // Error state
+  if (isError || !stats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
@@ -33,6 +35,7 @@ export function StatsOverview() {
     );
   }
 
+  // Stat cards
   const statCards = [
     {
       title: "Total Companies",
@@ -40,7 +43,7 @@ export function StatsOverview() {
       icon: Building,
       iconBg: "bg-accent/10",
       iconColor: "text-accent",
-      testId: "stat-total-companies"
+      testId: "stat-total-companies",
     },
     {
       title: "This Week",
@@ -48,15 +51,15 @@ export function StatsOverview() {
       icon: TrendingUp,
       iconBg: "bg-primary/10",
       iconColor: "text-primary",
-      testId: "stat-this-week"
+      testId: "stat-this-week",
     },
     {
       title: "Total Funding",
-      value: stats.total_funding ?? "0",
+      value: stats.total_funding ?? "$0",
       icon: DollarSign,
       iconBg: "bg-orange-100",
       iconColor: "text-orange-600",
-      testId: "stat-total-funding"
+      testId: "stat-total-funding",
     },
     {
       title: "Contacted",
@@ -64,8 +67,8 @@ export function StatsOverview() {
       icon: Mail,
       iconBg: "bg-red-100",
       iconColor: "text-red-600",
-      testId: "stat-contacted"
-    }
+      testId: "stat-contacted",
+    },
   ];
 
   return (
@@ -73,8 +76,8 @@ export function StatsOverview() {
       {statCards.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div 
-            key={stat.title} 
+          <div
+            key={stat.title}
             className="bg-card rounded-lg p-6 border border-border shadow-sm"
             data-testid={stat.testId}
           >
