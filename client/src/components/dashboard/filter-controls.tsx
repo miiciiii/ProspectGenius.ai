@@ -60,7 +60,7 @@ export function FilterControls({
 
   return (
     <div className="mb-6">
-      <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
+      <div className="bg-card rounded-xl p-6 border border-border shadow">
         <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
@@ -72,7 +72,7 @@ export function FilterControls({
               placeholder="Search companies..."
               value={filters.search || ""}
               onChange={(e) => handleFilterChange("search", e.target.value)}
-              className="pl-10 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md"
+              className="pl-10 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow"
               data-testid="input-search-companies"
             />
           </div>
@@ -84,7 +84,7 @@ export function FilterControls({
               value={filters.date_range || ""}
               onValueChange={(value) => handleFilterChange("date_range", value)}
             >
-              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-date-range">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow" data-testid="select-date-range">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
@@ -100,7 +100,7 @@ export function FilterControls({
               value={filters.funding_stage ? fundingStageMap[filters.funding_stage] : ""}
               onValueChange={(value) => handleFilterChange("funding_stage", value)}
             >
-              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-funding-stage">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow" data-testid="select-funding-stage">
                 <SelectValue placeholder="All Stages" />
               </SelectTrigger>
               <SelectContent>
@@ -117,7 +117,7 @@ export function FilterControls({
               value={filters.industry || ""}
               onValueChange={(value) => handleFilterChange("industry", value)}
             >
-              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-industry">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow" data-testid="select-industry">
                 <SelectValue placeholder="All Industries" />
               </SelectTrigger>
               <SelectContent>
@@ -135,7 +135,7 @@ export function FilterControls({
               value={filters.status ? statusMap[filters.status] : ""}
               onValueChange={(value) => handleFilterChange("status", value)}
             >
-              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow-md" data-testid="select-status">
+              <SelectTrigger className="w-40 bg-input border-border focus:bg-card focus:border-accent hover:border-accent/50 transition-all duration-200 hover:shadow" data-testid="select-status">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -153,7 +153,7 @@ export function FilterControls({
                 variant="outline"
                 size="sm"
                 onClick={clearFilters}
-                className="flex items-center hover:bg-secondary hover:border-accent hover:text-accent transition-all duration-200 hover:scale-105 hover:shadow-md"
+                className="flex items-center hover:bg-secondary hover:border-accent hover:text-accent transition-all duration-200 hover:shadow"
                 data-testid="button-clear-filters"
               >
                 <X className="mr-1" />
