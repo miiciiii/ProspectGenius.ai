@@ -42,11 +42,12 @@ export default function Companies() {
               onClick={handleExportCSV}
               disabled={exportCSV.isPending}
               data-testid="button-export-csv"
+              className="brand-hover-glow"
             >
               <Upload className="hero-icon mr-2" />
               {exportCSV.isPending ? "Exporting..." : "Export CSV"}
             </Button>
-            <Button onClick={handleRefreshData} data-testid="button-refresh-data">
+            <Button onClick={handleRefreshData} data-testid="button-refresh-data" className="btn-gradient">
               <RefreshCw className="hero-icon mr-2" />
               Refresh Data
             </Button>

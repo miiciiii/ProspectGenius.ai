@@ -30,7 +30,7 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Header Section */}
         <div className="mb-8 flex items-center justify-between">
@@ -46,6 +46,7 @@ export default function Dashboard() {
               onClick={handleExportCSV}
               disabled={exportCSV.isPending}
               data-testid="button-export-csv"
+              className="brand-hover-glow"
             >
               <Upload className="hero-icon mr-2" />
               {exportCSV.isPending ? "Exporting..." : "Export CSV"}
@@ -53,6 +54,7 @@ export default function Dashboard() {
             <Button 
               onClick={handleRefreshData}
               data-testid="button-refresh-data"
+              className="btn-gradient"
             >
               <RefreshCw className="hero-icon mr-2" />
               Refresh Data
@@ -60,25 +62,39 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Bug: Stats Overview */}
+        {/* <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+          <div className="bg-card rounded-lg shadow p-4 border border-border"><StatsOverview /></div>
+        </div> */}
+
         {/* Stats Overview */}
-        <StatsOverview />
+        <div className="bg-card rounded-lg shadow p-4 border border-border">
+          <StatsOverview />
+        </div>
+
 
         {/* Highlights Section */}
-        <HighlightsSection />
+        <div className="bg-card rounded-lg shadow p-4 border border-border">
+          <HighlightsSection />
+        </div>
 
         {/* Filter Controls */}
-        <FilterControls
-          filters={filters}
-          onFiltersChange={setFilters}
-          totalCount={allCompanies.length}
-          filteredCount={companies.length}
-        />
+        <div className="bg-card rounded-lg shadow p-4 border border-border">
+          <FilterControls
+            filters={filters}
+            onFiltersChange={setFilters}
+            totalCount={allCompanies.length}
+            filteredCount={companies.length}
+          />
+        </div>
 
         {/* Companies Table */}
-        <CompaniesDataTable
-          companies={companies}
-          isLoading={isLoading}
-        />
+        <div className="bg-card rounded-lg shadow p-2 md:p-4 border border-border">
+          <CompaniesDataTable
+            companies={companies}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </MainLayout>
   );

@@ -244,12 +244,32 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
                             </div>
                             <div>
                               <p className="font-semibold text-foreground">Socials</p>
-                              <div className="flex flex-wrap gap-1">
+                              {/* TODO: Make the Social Media Clickable (Done) */}
+                              {/* <div className="flex flex-wrap gap-1">
                                 {company.social_media?.length
                                   ? company.social_media.map((url, idx) => (
                                       <Badge key={idx} variant="outline" className="text-xs cursor-pointer hover:bg-muted/50">
                                         {new URL(url).hostname.replace("www.", "")}
                                       </Badge>
+                                    ))
+                                  : "—"}
+                              </div> */}
+                              <div className="flex flex-wrap gap-1">
+                                {company.social_media?.length
+                                  ? company.social_media.map((url, idx) => (
+                                      <a
+                                        key={idx}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs cursor-pointer hover:bg-muted/50"
+                                        >
+                                          {new URL(url).hostname.replace("www.", "")}
+                                        </Badge>
+                                      </a>
                                     ))
                                   : "—"}
                               </div>

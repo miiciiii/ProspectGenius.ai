@@ -102,21 +102,21 @@ export function Navbar() {
   }
 
   return (
-    <nav className="bg-card border-b border-border fixed top-0 left-0 right-0 z-50">
+    <nav className="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border fixed top-0 left-0 right-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
-            {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  PG
-                </span>
-              </div>
-              <span className="font-semibold text-lg text-foreground">
-                ProspectGenius | AgentGenius.ai
-              </span>
-            </div>
+            {/* Brand */}
+            <a href="/" className="flex items-center gap-2 group">
+              <img
+                src="/brand/wordmark.jpg"
+                alt="ProspectGenius.ai"
+                className="h-8 w-auto rounded-md shadow-xs ring-1 ring-transparent group-hover:ring-primary/30 transition-all"
+                loading="eager"
+                decoding="async"
+              />
+              <span className="sr-only">ProspectGenius.ai</span>
+            </a>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-6">
@@ -127,8 +127,8 @@ export function Navbar() {
                   data-testid={link.testId}
                   className={`${
                     isActive(link.path)
-                      ? "text-primary font-medium border-b-2 border-primary pb-0.5"
-                      : "text-muted-foreground hover:text-foreground transition-colors"
+                      ? "text-primary font-medium border-b-2 border-primary/70 pb-0.5"
+                      : "text-muted-foreground hover:text-foreground hover:-translate-y-0.5 transition-all"
                   }`}>
                   {link.label}
                 </Link>
@@ -140,14 +140,14 @@ export function Navbar() {
           <div className="flex items-center space-x-4">
             {/* Search */}
             <button
-              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               data-testid="button-search">
               <Search className="hero-icon" />
             </button>
 
             {/* Quick Add */}
             <button
-              className="flex items-center space-x-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+              className="flex items-center space-x-1 btn-gradient px-3 py-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-sm font-medium shadow-sm active:translate-y-px"
               data-testid="button-quick-add">
               <Plus className="w-4 h-4" />
               <span>New</span>
@@ -155,7 +155,7 @@ export function Navbar() {
 
             {/* Notifications */}
             <button
-              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary transition-colors"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
               data-testid="button-notifications">
               <Bell className="hero-icon" />
             </button>

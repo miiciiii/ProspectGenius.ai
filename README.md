@@ -1,8 +1,8 @@
-# Deal Genius - Startup Funding Intelligence Platform
+# ProspectGenius - Startup Funding Intelligence Platform
 
 ## Overview
 
-Deal Genius is a comprehensive startup funding intelligence platform built to track and analyze newly funded startups from multiple data sources. The application provides investment professionals and entrepreneurs with real-time insights into funding activities, company details, and market trends. The platform features a modern dashboard interface with advanced filtering, sorting, and export capabilities to help users identify investment opportunities and track market dynamics.
+ProspectGenius is a comprehensive startup funding intelligence platform built to track and analyze newly funded startups from multiple data sources. The application provides investment professionals and entrepreneurs with real-time insights into funding activities, company details, and market trends. The platform features a modern dashboard interface with advanced filtering, sorting, and export capabilities to help users identify investment opportunities and track market dynamics.
 
 ## User Preferences
 

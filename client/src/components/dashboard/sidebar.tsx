@@ -117,7 +117,7 @@ export function Sidebar({ className }: SidebarProps) {
         "hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:pt-16",
         className
       )}>
-      <div className="flex flex-col h-full bg-card border-r border-border">
+      <div className="flex flex-col h-full bg-sidebar/80 backdrop-blur supports-[backdrop-filter]:bg-sidebar/70 border-r border-sidebar-border">
         {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto pt-5 px-3">
           <div className="space-y-6">
@@ -141,10 +141,10 @@ export function Sidebar({ className }: SidebarProps) {
                         key={item.path}
                         to={item.path}
                         className={cn(
-                          "group flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                          "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all",
                           isActive(item.path)
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary",
+                            ? "bg-primary/10 text-primary shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary hover:-translate-y-0.5",
                           !hasAccess && "opacity-50 cursor-not-allowed"
                         )}
                         onClick={(e) => {
