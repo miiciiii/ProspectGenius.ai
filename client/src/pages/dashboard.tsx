@@ -62,10 +62,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+        {/* Bug: Stats Overview */}
+        {/* <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
           <div className="bg-card rounded-lg shadow p-4 border border-border"><StatsOverview /></div>
+        </div> */}
+
+        {/* Stats Overview */}
+        <div className="bg-card rounded-lg shadow p-4 border border-border">
+          <StatsOverview />
         </div>
+
 
         {/* Highlights Section */}
         <div className="bg-card rounded-lg shadow p-4 border border-border">
