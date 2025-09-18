@@ -35,7 +35,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn("hidden lg:flex lg:w-64 lg:flex-col", className)}>
-      <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto bg-card border-r border-border">
+      <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto bg-sidebar/80 backdrop-blur supports-[backdrop-filter]:bg-sidebar/70 border-r border-sidebar-border">
         <div className="flex-1 px-3 space-y-6">
           {sidebarLinks.map((section) => (
             <div key={section.section}>
@@ -50,10 +50,10 @@ export function Sidebar({ className }: SidebarProps) {
                       key={item.path}
                       to={item.path}
                       className={cn(
-                        "group flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                        "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all",
                         isActive(item.path)
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                          ? "bg-primary/10 text-primary shadow-xs"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary hover:-translate-y-0.5"
                       )}
                     >
                       <Icon className="hero-icon mr-3" />
