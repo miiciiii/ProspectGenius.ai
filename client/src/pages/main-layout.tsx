@@ -23,7 +23,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       {/* Footer with left margin for fixed sidebar */}
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }

@@ -30,6 +30,10 @@ import Playbooks from "@/pages/workflows/playbooks";
 import Automations from "@/pages/workflows/automations";
 import NotFound from "@/pages/not-found";
 
+
+// Landing page
+import LandingPage from "@/pages/landing/landing";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,8 +47,10 @@ function App() {
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
 
+            {/* Public landing page */}
+            <Route path="/" element={<LandingPage />} />
+
             {/* Protected dashboard routes */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/dashboard"
               element={

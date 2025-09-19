@@ -94,7 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await authService.logoutUser();
       setUser(null);
-      navigate("/auth/login");
+      // navigate("/auth/login");
+      navigate("/"); // Redirect to landing page after logout
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
