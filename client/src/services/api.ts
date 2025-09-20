@@ -1,9 +1,10 @@
 import { apiRequest } from "@/lib/queryClient";
-import type { 
-  FundedCompany, 
-  InsertFundedCompany, 
-  DashboardStats, 
-  CompanyFilters 
+import type {
+  FundedCompany,
+  InsertFundedCompany,
+  DashboardStats,
+  CompanyFilters,
+  Contact,
 } from "@shared/schema";
 
 export class Api {
@@ -16,11 +17,10 @@ export class Api {
     if (filters?.search) params.append("search", filters.search);
     if (filters?.date_range) params.append("dateRange", filters.date_range);
 
-    // Normalize funding_stage to match DB values exactly
     if (filters?.funding_stage) {
       const stageMap: Record<string, string> = {
         "pre-seed": "Pre-Seed",
-        "seed": "Seed",
+        seed: "Seed",
         "series-a": "Series A",
         "series-b": "Series B",
         "series-c": "Series C",
@@ -33,8 +33,8 @@ export class Api {
 
     if (filters?.status) {
       const statusMap: Record<string, string> = {
-        "new": "new",
-        "contacted": "contacted",
+        new: "new",
+        contacted: "contacted",
         "follow-up": "follow-up",
       };
       const status = statusMap[filters.status.toLowerCase()] || filters.status;
@@ -44,38 +44,75 @@ export class Api {
     const response = await apiRequest("GET", `/api/companies?${params.toString()}`);
     const data: FundedCompany[] = await response.json();
 
-    // Safety filter in case backend ignores query params
-    const filteredData = data.filter((company) => {
-      const stageFilter = filters?.funding_stage
-        ? company.funding_stage === (params.get("fundingStage") || "")
-        : true;
-      const industryFilter = filters?.industry
-        ? company.industry === filters.industry
-        : true;
-      const statusFilter = filters?.status
-        ? company.status === (params.get("status") || "")
-        : true;
-      return stageFilter && industryFilter && statusFilter;
-    });
-
-    return filteredData;
+    // Normalize arrays and contacts
+    return data
+      .map((company) => ({
+        ...company,
+        investors: company.investors ?? [],
+        social_media: company.social_media ?? [],
+        contacts: Array.isArray(company.contacts) ? company.contacts : [],
+      }))
+      // Safety filter in case backend ignores query params
+      .filter((company) => {
+        const stageFilter = filters?.funding_stage
+          ? company.funding_stage === (params.get("fundingStage") || "")
+          : true;
+        const industryFilter = filters?.industry
+          ? company.industry === filters.industry
+          : true;
+        const statusFilter = filters?.status
+          ? company.status === (params.get("status") || "")
+          : true;
+        return stageFilter && industryFilter && statusFilter;
+      });
   }
 
   static async getCompany(id: string): Promise<FundedCompany> {
     const response = await apiRequest("GET", `/api/companies/${id}`);
-    return await response.json();
+    const company: FundedCompany = await response.json();
+    return {
+      ...company,
+      investors: company.investors ?? [],
+      social_media: company.social_media ?? [],
+      contacts: Array.isArray(company.contacts) ? company.contacts : [],
+    };
   }
 
   static async createCompany(company: InsertFundedCompany): Promise<FundedCompany> {
-    const payload = { ...company, social_media: company.social_media ?? [] };
+    const payload: InsertFundedCompany = {
+      ...company,
+      social_media: company.social_media ?? [],
+      investors: company.investors ?? [],
+      contacts: company.contacts ?? [],
+    };
     const response = await apiRequest("POST", "/api/companies", payload);
-    return await response.json();
+    const created: FundedCompany = await response.json();
+    return {
+      ...created,
+      investors: created.investors ?? [],
+      social_media: created.social_media ?? [],
+      contacts: Array.isArray(created.contacts) ? created.contacts : [],
+    };
   }
 
-  static async updateCompany(id: string, updates: Partial<FundedCompany>): Promise<FundedCompany> {
-    const payload = updates.social_media ? { ...updates, social_media: updates.social_media } : updates;
+  static async updateCompany(
+    id: string,
+    updates: Partial<FundedCompany>
+  ): Promise<FundedCompany> {
+    const payload = {
+      ...updates,
+      social_media: updates.social_media ?? [],
+      investors: updates.investors ?? [],
+      contacts: updates.contacts ?? [],
+    };
     const response = await apiRequest("PATCH", `/api/companies/${id}`, payload);
-    return await response.json();
+    const updated: FundedCompany = await response.json();
+    return {
+      ...updated,
+      investors: updated.investors ?? [],
+      social_media: updated.social_media ?? [],
+      contacts: Array.isArray(updated.contacts) ? updated.contacts : [],
+    };
   }
 
   static async deleteCompany(id: string): Promise<void> {
@@ -83,9 +120,20 @@ export class Api {
   }
 
   static async bulkCreateCompanies(companies: InsertFundedCompany[]): Promise<FundedCompany[]> {
-    const payload = companies.map((c) => ({ ...c, social_media: c.social_media ?? [] }));
+    const payload = companies.map((c) => ({
+      ...c,
+      social_media: c.social_media ?? [],
+      investors: c.investors ?? [],
+      contacts: c.contacts ?? [],
+    }));
     const response = await apiRequest("POST", "/api/companies/bulk", { companies: payload });
-    return await response.json();
+    const data: FundedCompany[] = await response.json();
+    return data.map((c) => ({
+      ...c,
+      investors: c.investors ?? [],
+      social_media: c.social_media ?? [],
+      contacts: Array.isArray(c.contacts) ? c.contacts : [],
+    }));
   }
 
   /** -----------------------------
@@ -108,7 +156,7 @@ export class Api {
     if (filters?.funding_stage) {
       const stageMap: Record<string, string> = {
         "pre-seed": "Pre-Seed",
-        "seed": "Seed",
+        seed: "Seed",
         "series-a": "Series A",
         "series-b": "Series B",
         "series-c": "Series C",
@@ -121,8 +169,8 @@ export class Api {
 
     if (filters?.status) {
       const statusMap: Record<string, string> = {
-        "new": "new",
-        "contacted": "contacted",
+        new: "new",
+        contacted: "contacted",
         "follow-up": "follow-up",
       };
       const status = statusMap[filters.status.toLowerCase()] || filters.status;
@@ -132,8 +180,16 @@ export class Api {
     const response = await apiRequest("GET", `/api/companies/export?${params.toString()}`);
     const data: FundedCompany[] = await response.json();
 
-    // Safety filter to ensure frontend only sees exact matches
-    const filteredData = data.filter((company) => {
+    // Normalize arrays and contacts
+    const normalizedData = data.map((company) => ({
+      ...company,
+      investors: company.investors ?? [],
+      social_media: company.social_media ?? [],
+      contacts: Array.isArray(company.contacts) ? company.contacts : [],
+    }));
+
+    // Safety filter
+    const filteredData = normalizedData.filter((company) => {
       const stageFilter = filters?.funding_stage
         ? company.funding_stage === (params.get("fundingStage") || "")
         : true;
@@ -146,6 +202,6 @@ export class Api {
       return stageFilter && industryFilter && statusFilter;
     });
 
-    return { data: filteredData }; // Wrap in object
+    return { data: filteredData };
   }
 }

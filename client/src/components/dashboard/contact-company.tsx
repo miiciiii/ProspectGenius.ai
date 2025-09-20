@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpdateCompany } from "@/hooks/use-companies";
+import type { Contact } from "@shared/schema";
 
 interface ContactCompanyProps {
   companyId: string;
   companyName: string;
+  contacts?: Contact[]; // updated schema: multiple contacts
   onClose: () => void;
 }
 
-export function ContactCompany({ companyId, companyName, onClose }: ContactCompanyProps) {
-  const [to] = useState(`${companyName} <contact@${companyName.toLowerCase().replace(/\s+/g, "")}.com>`);
+export function ContactCompany({ companyId, companyName, contacts = [], onClose }: ContactCompanyProps) {
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [subject, setSubject] = useState(`Intro: ${companyName}`);
   const [message, setMessage] = useState(
     "Hi, congrats on your recent funding!\n\nWe’d love to connect and explore potential synergies."
@@ -19,11 +22,22 @@ export function ContactCompany({ companyId, companyName, onClose }: ContactCompa
 
   const updateCompanyMutation = useUpdateCompany();
 
+  // Default to the first contact if available
+  useEffect(() => {
+    if (contacts.length > 0) {
+      setSelectedContact(contacts[0]);
+    }
+  }, [contacts]);
+
   const handleSend = async () => {
+    if (!selectedContact) return; // safety check
+
+    // Here you could also integrate actual email sending logic if needed
     await updateCompanyMutation.mutateAsync({
       id: companyId,
       updates: { status: "contacted" },
     });
+
     onClose();
   };
 
@@ -43,7 +57,33 @@ export function ContactCompany({ companyId, companyName, onClose }: ContactCompa
           {/* To */}
           <div className="flex items-center space-x-2">
             <span className="w-12 text-sm text-muted-foreground">To</span>
-            <Input value={to} disabled className="text-sm" />
+            {contacts.length > 0 ? (
+              <Select
+                value={selectedContact?.email ?? ""}
+                onValueChange={(value) => {
+                  const contact = contacts.find((c) => c.email === value) || null;
+                  setSelectedContact(contact);
+                }}
+              >
+                <SelectTrigger className="text-sm w-full">
+                  <SelectValue placeholder="Select contact" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contacts.map((contact) => {
+                    const email = contact.email ?? "";
+                    const name = contact.full_name ?? "Unnamed";
+
+                    return (
+                      <SelectItem key={email || name} value={email}>
+                        {name} &lt;{email || "no-email"}&gt;
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value="No contacts available" disabled className="text-sm" />
+            )}
           </div>
 
           {/* Subject */}
@@ -68,7 +108,10 @@ export function ContactCompany({ companyId, companyName, onClose }: ContactCompa
 
         {/* Footer */}
         <div className="flex justify-between items-center px-4 py-3 border-t border-border">
-          <Button onClick={handleSend} disabled={updateCompanyMutation.isPending}>
+          <Button
+            onClick={handleSend}
+            disabled={updateCompanyMutation.isPending || !selectedContact}
+          >
             {updateCompanyMutation.isPending ? "Sending..." : "Send"}
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose}>

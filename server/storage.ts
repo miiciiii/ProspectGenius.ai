@@ -110,7 +110,7 @@ export class SupabaseStorage implements IStorage {
     oneWeekAgo.setDate(now.getDate() - 7);
 
     const thisWeekCompanies = companies.filter(
-      (c) => new Date(c.funding_date) >= oneWeekAgo
+      (c) => new Date(c.created_at) >= oneWeekAgo
     );
 
     const totalFunding = companies.reduce(

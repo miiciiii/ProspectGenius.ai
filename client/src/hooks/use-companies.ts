@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Api } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import type { FundedCompany, InsertFundedCompany, CompanyFilters } from "@shared/schema";
+import type {
+  FundedCompany,
+  InsertFundedCompany,
+  CompanyFilters,
+  Contact,
+} from "@shared/schema";
 
 /** -----------------------------
  * Normalize filter values to match DB/API
@@ -11,15 +16,15 @@ function normalizeFilters(filters?: CompanyFilters): CompanyFilters | undefined 
 
   const fundingStageMap: Record<string, string> = {
     "pre-seed": "Pre-Seed",
-    "seed": "Seed",
+    seed: "Seed",
     "series-a": "Series A",
     "series-b": "Series B",
     "series-c": "Series C",
   };
 
   const statusMap: Record<string, string> = {
-    "new": "new",
-    "contacted": "contacted",
+    new: "new",
+    contacted: "contacted",
     "follow-up": "follow-up",
   };
 
@@ -44,7 +49,14 @@ export function useCompanies(filters?: CompanyFilters) {
     queryKey: ["/api/companies", normalizedFilters],
     queryFn: async () => {
       const companies = await Api.getCompanies(normalizedFilters);
-      return companies as FundedCompany[];
+
+      // Normalize arrays and contacts for frontend
+      return (companies as FundedCompany[]).map((c) => ({
+        ...c,
+        investors: c.investors ?? [],
+        social_media: c.social_media ?? [],
+        contacts: Array.isArray(c.contacts) ? c.contacts : [],
+      }));
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -53,7 +65,17 @@ export function useCompanies(filters?: CompanyFilters) {
 export function useCompany(id: string) {
   return useQuery({
     queryKey: ["/api/companies", id],
-    queryFn: () => (id ? Api.getCompany(id) : null),
+    queryFn: async () => {
+      if (!id) return null;
+      const company = await Api.getCompany(id);
+      if (!company) return null;
+      return {
+        ...company,
+        investors: company.investors ?? [],
+        social_media: company.social_media ?? [],
+        contacts: Array.isArray(company.contacts) ? company.contacts : [],
+      } as FundedCompany;
+    },
     enabled: !!id,
   });
 }

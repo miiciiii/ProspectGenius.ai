@@ -11,15 +11,26 @@ export function HighlightsSection() {
    * ---------------------- */
   const recentUpdates = [...newThisWeek, ...followUpRequired]
     .filter((c) => c.source)
-    .sort((a, b) => new Date(b.funding_date).getTime() - new Date(a.funding_date).getTime())
+    .sort((a, b) => {
+      const aDate = a.funding_date ? new Date(a.funding_date).getTime() : 0;
+      const bDate = b.funding_date ? new Date(b.funding_date).getTime() : 0;
+      return bDate - aDate;
+    })
     .slice(0, 3)
-    .map((c) => ({
-      source: c.source!,
-      description: c.funding_amount
-        ? `Raised $${(c.funding_amount / 1_000_000).toFixed(1)}M`
-        : "Funding info pending",
-      timestamp: `${Math.floor((Date.now() - new Date(c.funding_date).getTime()) / (1000 * 60 * 60))} hrs ago`,
-    }));
+    .map((c) => {
+      const fundingAmount = c.funding_amount ?? 0;
+      const description = fundingAmount
+        ? `Raised $${(fundingAmount / 1_000_000).toFixed(1)}M`
+        : "Funding info pending";
+      const timestamp = c.funding_date
+        ? `${Math.floor((Date.now() - new Date(c.funding_date).getTime()) / (1000 * 60 * 60))} hrs ago`
+        : "Date TBD";
+      return {
+        source: c.source ?? "Unknown source",
+        description,
+        timestamp,
+      };
+    });
 
   const highlightSections = [
     {
@@ -96,18 +107,15 @@ export function HighlightsSection() {
                   data-testid={`update-${index}`}
                 >
                   <div className="max-w-[70%]">
-                    {/* Truncate long text */}
                     <p
                       className="font-medium text-sm text-foreground truncate hover:whitespace-normal hover:overflow-visible hover:break-words cursor-pointer"
-                      title={update.source} // tooltip with full text
+                      title={update.source}
                     >
                       {update.source}
                     </p>
                     <p className="text-xs text-muted-foreground">{update.description}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {update.timestamp}
-                  </span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{update.timestamp}</span>
                 </div>
               ))
             ) : (
@@ -126,8 +134,15 @@ interface CompanyHighlightItemProps {
 }
 
 function CompanyHighlightItem({ company, showFollowUp }: CompanyHighlightItemProps) {
-  const daysAgo = Math.floor((Date.now() - new Date(company.funding_date).getTime()) / (1000 * 60 * 60 * 24));
-  const timeAgo = daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+  const fundingDate = company.funding_date ? new Date(company.funding_date) : null;
+  const daysAgo = fundingDate
+    ? Math.floor((Date.now() - fundingDate.getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  const timeAgo =
+    daysAgo === null ? "Date TBD" : daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+
+  const fundingAmount = company.funding_amount ?? 0;
+  const fundingStage = company.funding_stage ?? "—";
 
   return (
     <div
@@ -135,13 +150,11 @@ function CompanyHighlightItem({ company, showFollowUp }: CompanyHighlightItemPro
       data-testid={`company-highlight-${company.id}`}
     >
       <div>
-        <p className="font-medium text-sm text-foreground">{company.company_name}</p>
+        <p className="font-medium text-sm text-foreground">{company.company_name ?? "Unknown"}</p>
         <p className="text-xs text-muted-foreground">
           {showFollowUp
             ? `Contacted ${timeAgo}`
-            : `${company.funding_stage} • ${
-                company.funding_amount ? `$${(company.funding_amount / 1_000_000).toFixed(1)}M` : "Amount TBD"
-              }`}
+            : `${fundingStage} • ${fundingAmount ? `$${(fundingAmount / 1_000_000).toFixed(1)}M` : "Amount TBD"}`}
         </p>
       </div>
       {showFollowUp ? (
