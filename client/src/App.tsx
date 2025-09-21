@@ -19,7 +19,7 @@ import ResetPassword from "@/pages/auth/reset-password";
 
 // Dashboard pages
 import Dashboard from "@/pages/dashboard";
-import Companies from "@/pages/companies";
+import Companies from "@/pages/reports/company-reports";
 import Analytics from "@/pages/analytics";
 import Sources from "@/pages/sources";
 import Settings from "@/pages/administration/settings";

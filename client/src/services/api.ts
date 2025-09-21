@@ -5,6 +5,7 @@ import type {
   DashboardStats,
   CompanyFilters,
   Contact,
+  CompanyReport,
 } from "@shared/schema";
 
 export class Api {
@@ -52,7 +53,7 @@ export class Api {
         social_media: company.social_media ?? [],
         contacts: Array.isArray(company.contacts) ? company.contacts : [],
       }))
-      // Safety filter in case backend ignores query params
+      // Safety filter
       .filter((company) => {
         const stageFilter = filters?.funding_stage
           ? company.funding_stage === (params.get("fundingStage") || "")
@@ -180,7 +181,6 @@ export class Api {
     const response = await apiRequest("GET", `/api/companies/export?${params.toString()}`);
     const data: FundedCompany[] = await response.json();
 
-    // Normalize arrays and contacts
     const normalizedData = data.map((company) => ({
       ...company,
       investors: company.investors ?? [],
@@ -188,7 +188,6 @@ export class Api {
       contacts: Array.isArray(company.contacts) ? company.contacts : [],
     }));
 
-    // Safety filter
     const filteredData = normalizedData.filter((company) => {
       const stageFilter = filters?.funding_stage
         ? company.funding_stage === (params.get("fundingStage") || "")
@@ -203,5 +202,36 @@ export class Api {
     });
 
     return { data: filteredData };
+  }
+
+  /** -----------------------------
+   * Company Reports
+   * ----------------------------- */
+  static async getCompanyReports(): Promise<CompanyReport[]> {
+    try {
+      const res = await apiRequest("GET", "/api/company-reports");
+
+      // Read the raw text first
+      const text = await res.text();
+
+      // Try to parse JSON, otherwise throw an informative error
+      let data: CompanyReport[];
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Non-JSON response from /api/company-reports:", text);
+        throw new Error("Invalid JSON response from API");
+      }
+
+      // Normalize arrays
+      return data.map((r) => ({
+        ...r,
+        investors: Array.isArray(r.investors) ? r.investors : [],
+        markets: Array.isArray(r.markets) ? r.markets : [],
+      }));
+    } catch (err) {
+      console.error("Error fetching company reports:", err);
+      throw err;
+    }
   }
 }

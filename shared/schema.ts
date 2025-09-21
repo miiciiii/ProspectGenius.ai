@@ -52,3 +52,24 @@ export interface DashboardStats {
   total_funding: string;
   contacted: number;
 }
+
+// Company reports
+export type CompanyReport = {
+  id: string;
+  company_name: string | null;
+  description: string | null;
+  funding_round: string | null;
+  funding_amount: number | null;
+  funding_date: string | null;
+  investors: string[] | null;
+  markets: string[] | null;
+  hq: string | null;
+  founded_year: number | null;
+  website: string | null;
+  linkedin: string | null;
+  twitter: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  crunchbase: string | null;
+  pitchbook: string | null;
+};

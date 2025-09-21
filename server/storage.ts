@@ -4,22 +4,19 @@ import {
   type InsertFundedCompany,
   type CompanyFilters,
   type DashboardStats,
+  type CompanyReport,
 } from "@shared/schema";
 
 export interface IStorage {
   getFundedCompany(id: string): Promise<FundedCompany | undefined>;
-  getAllFundedCompanies(): Promise<FundedCompany[]>;
+  getAllFundedCompanies(filters?: Partial<FundedCompany>): Promise<FundedCompany[]>;
   getFilteredFundedCompanies(filters: CompanyFilters): Promise<FundedCompany[]>;
   createFundedCompany(company: InsertFundedCompany): Promise<FundedCompany>;
-  updateFundedCompany(
-    id: string,
-    updates: Partial<FundedCompany>
-  ): Promise<FundedCompany>;
+  updateFundedCompany(id: string, updates: Partial<FundedCompany>): Promise<FundedCompany>;
   deleteFundedCompany(id: string): Promise<void>;
   getDashboardStats(): Promise<DashboardStats>;
-  bulkCreateFundedCompanies(
-    companies: InsertFundedCompany[]
-  ): Promise<FundedCompany[]>;
+  bulkCreateFundedCompanies(companies: InsertFundedCompany[]): Promise<FundedCompany[]>;
+  getCompanyReports(): Promise<CompanyReport[]>; // NEW
 }
 
 export class SupabaseStorage implements IStorage {
@@ -29,19 +26,19 @@ export class SupabaseStorage implements IStorage {
       .select("*")
       .eq("id", id)
       .maybeSingle();
-
     if (error) throw error;
     return data ?? undefined;
   }
 
   async getAllFundedCompanies(filters?: Partial<FundedCompany>) {
-    let query = supabase.from("funded_companies_production").select("*").order("funding_date", { ascending: false });
+    let query = supabase
+      .from("funded_companies_production")
+      .select("*")
+      .order("funding_date", { ascending: false });
 
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          query = query.eq(key, value as any);
-        }
+        if (value !== undefined) query = query.eq(key, value as any);
       });
     }
 
@@ -50,22 +47,13 @@ export class SupabaseStorage implements IStorage {
     return (data ?? []) as FundedCompany[];
   }
 
-
   async getFilteredFundedCompanies(filters: CompanyFilters) {
     let query = supabase.from("funded_companies_production").select("*");
 
-    if (filters.search) {
-      query = query.ilike("company_name", `%${filters.search}%`);
-    }
-    if (filters.funding_stage) {
-      query = query.eq("funding_stage", filters.funding_stage);
-    }
-    if (filters.industry) {
-      query = query.eq("industry", filters.industry);
-    }
-    if (filters.status) {
-      query = query.eq("status", filters.status);
-    }
+    if (filters.search) query = query.ilike("company_name", `%${filters.search}%`);
+    if (filters.funding_stage) query = query.eq("funding_stage", filters.funding_stage);
+    if (filters.industry) query = query.eq("industry", filters.industry);
+    if (filters.status) query = query.eq("status", filters.status);
 
     const { data, error } = await query.order("funding_date", { ascending: false });
     if (error) throw error;
@@ -78,7 +66,6 @@ export class SupabaseStorage implements IStorage {
       .insert(company)
       .select()
       .single();
-
     if (error) throw error;
     return data as FundedCompany;
   }
@@ -90,7 +77,6 @@ export class SupabaseStorage implements IStorage {
       .eq("id", id)
       .select()
       .single();
-
     if (error) throw error;
     return data as FundedCompany;
   }
@@ -142,9 +128,24 @@ export class SupabaseStorage implements IStorage {
       .from("funded_companies_production")
       .insert(companies)
       .select();
-
     if (error) throw error;
     return (data ?? []) as FundedCompany[];
+  }
+
+  async getCompanyReports(): Promise<CompanyReport[]> {
+    const { data, error } = await supabase
+      .from("company_reports")
+      .select("*")
+      .not("company_name", "is", null)
+      .order("funding_date", { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []).map((r) => ({
+      ...r,
+      investors: Array.isArray(r.investors) ? r.investors : [],
+      markets: Array.isArray(r.markets) ? r.markets : [],
+    }));
   }
 }
 
