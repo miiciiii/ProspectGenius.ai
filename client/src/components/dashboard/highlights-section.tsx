@@ -1,36 +1,21 @@
 import { useCompanies } from "@/hooks/use-companies";
-import { subDays, isAfter } from "date-fns";
-import type { FundedCompany, CompanyFilters } from "@shared/schema";
+import type { FundedCompany } from "@shared/schema";
 
 export function HighlightsSection() {
   const { data: newThisWeek = [] } = useCompanies({ date_range: "week" });
   const { data: followUpRequired = [] } = useCompanies({ status: "follow-up" });
+  const { data: allCompanies = [] } = useCompanies();
 
   /** -----------------------
-   * Recent Updates
+   * Recent Updates (top 3 most recent companies)
    * ---------------------- */
-  const recentUpdates = [...newThisWeek, ...followUpRequired]
-    .filter((c) => c.source)
+  const recentUpdates = allCompanies
     .sort((a, b) => {
-      const aDate = a.funding_date ? new Date(a.funding_date).getTime() : 0;
-      const bDate = b.funding_date ? new Date(b.funding_date).getTime() : 0;
+      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
       return bDate - aDate;
     })
-    .slice(0, 3)
-    .map((c) => {
-      const fundingAmount = c.funding_amount ?? 0;
-      const description = fundingAmount
-        ? `Raised $${(fundingAmount / 1_000_000).toFixed(1)}M`
-        : "Funding info pending";
-      const timestamp = c.funding_date
-        ? `${Math.floor((Date.now() - new Date(c.funding_date).getTime()) / (1000 * 60 * 60))} hrs ago`
-        : "Date TBD";
-      return {
-        source: c.source ?? "Unknown source",
-        description,
-        timestamp,
-      };
-    });
+    .slice(0, 3);
 
   const highlightSections = [
     {
@@ -66,7 +51,9 @@ export function HighlightsSection() {
             <div className="flex items-center space-x-3 mb-4">
               <div className={`w-2 h-2 ${section.dotColor} rounded-full`} />
               <h3 className="font-medium text-foreground">{section.title}</h3>
-              <span className={`${section.bgColor} ${section.textColor} text-xs font-medium px-2 py-1 rounded-full`}>
+              <span
+                className={`${section.bgColor} ${section.textColor} text-xs font-medium px-2 py-1 rounded-full`}
+              >
                 {section.count}
               </span>
             </div>
@@ -80,7 +67,9 @@ export function HighlightsSection() {
                   />
                 ))
               ) : (
-                <p className="text-muted-foreground text-sm">No companies in this category</p>
+                <p className="text-muted-foreground text-sm">
+                  No companies in this category
+                </p>
               )}
             </div>
           </div>
@@ -100,23 +89,8 @@ export function HighlightsSection() {
           </div>
           <div className="space-y-3">
             {recentUpdates.length > 0 ? (
-              recentUpdates.map((update, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-secondary/50 rounded-md"
-                  data-testid={`update-${index}`}
-                >
-                  <div className="max-w-[70%]">
-                    <p
-                      className="font-medium text-sm text-foreground truncate hover:whitespace-normal hover:overflow-visible hover:break-words cursor-pointer"
-                      title={update.source}
-                    >
-                      {update.source}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{update.description}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{update.timestamp}</span>
-                </div>
+              recentUpdates.map((company) => (
+                <CompanyHighlightItem key={company.id} company={company} />
               ))
             ) : (
               <p className="text-sm text-muted-foreground">No recent updates</p>
@@ -133,13 +107,22 @@ interface CompanyHighlightItemProps {
   showFollowUp?: boolean;
 }
 
-function CompanyHighlightItem({ company, showFollowUp }: CompanyHighlightItemProps) {
-  const fundingDate = company.funding_date ? new Date(company.funding_date) : null;
+function CompanyHighlightItem({
+  company,
+  showFollowUp,
+}: CompanyHighlightItemProps) {
+  const fundingDate = company.created_at ? new Date(company.created_at) : null;
   const daysAgo = fundingDate
     ? Math.floor((Date.now() - fundingDate.getTime()) / (1000 * 60 * 60 * 24))
     : null;
   const timeAgo =
-    daysAgo === null ? "Date TBD" : daysAgo === 0 ? "Today" : daysAgo === 1 ? "1 day ago" : `${daysAgo} days ago`;
+    daysAgo === null
+      ? "Date TBD"
+      : daysAgo === 0
+      ? "Today"
+      : daysAgo === 1
+      ? "1 day ago"
+      : `${daysAgo} days ago`;
 
   const fundingAmount = company.funding_amount ?? 0;
   const fundingStage = company.funding_stage ?? "—";
@@ -150,15 +133,24 @@ function CompanyHighlightItem({ company, showFollowUp }: CompanyHighlightItemPro
       data-testid={`company-highlight-${company.id}`}
     >
       <div>
-        <p className="font-medium text-sm text-foreground">{company.company_name ?? "Unknown"}</p>
+        <p className="font-medium text-sm text-foreground">
+          {company.company_name ?? "Unknown"}
+        </p>
         <p className="text-xs text-muted-foreground">
           {showFollowUp
             ? `Contacted ${timeAgo}`
-            : `${fundingStage} • ${fundingAmount ? `$${(fundingAmount / 1_000_000).toFixed(1)}M` : "Amount TBD"}`}
+            : `${fundingStage} • ${
+                fundingAmount
+                  ? `$${(fundingAmount / 1_000_000).toFixed(1)}M`
+                  : "Amount TBD"
+              }`}
         </p>
       </div>
       {showFollowUp ? (
-        <button className="text-xs text-primary hover:underline" data-testid={`button-follow-up-${company.id}`}>
+        <button
+          className="text-xs text-primary hover:underline"
+          data-testid={`button-follow-up-${company.id}`}
+        >
           Follow up
         </button>
       ) : (

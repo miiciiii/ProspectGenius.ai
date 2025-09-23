@@ -185,6 +185,16 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
     }
   };
 
+  // NEW: returns the year only (used in the Date Added column)
+  const formatYear = (value?: string | number | Date | null) => {
+    if (!value && value !== 0) return UNDECLARED;
+    try {
+      return format(new Date(value as any), "yyyy");
+    } catch {
+      return UNDECLARED;
+    }
+  };
+
   const getStatusBadgeVariant = (status: string | null | undefined) => {
     const map: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       new: "default",
@@ -357,7 +367,28 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
                         </Badge>
                       </td>
 
-                      <td className="px-4 py-2 text-sm text-muted-foreground align-top">{formatDate(company.created_at)}</td>
+                      {/* Date Added (year only) with tooltip on hover of the cell */}
+                      <td className="px-4 py-2 text-sm text-muted-foreground align-top relative group">
+                        {company.created_at ? (
+                          <>
+                            <span className="font-medium">{formatYear(company.created_at)}</span>
+                            {/* Screen-reader gets the full formatted date */}
+                            <span className="sr-only">Full date: {formatDate(company.created_at)}</span>
+
+                            {/* Tooltip: shows on hover of the cell */}
+                            <div
+                              role="tooltip"
+                              className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150 pointer-events-none"
+                            >
+                              <div className="rounded-md px-3 py-1 text-xs bg-black text-white whitespace-nowrap shadow">
+                                Disclaimer this is only an estimate date
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          UNDECLARED
+                        )}
+                      </td>
 
                       <td className="px-4 py-2 align-top">
                         <Badge variant={getStatusBadgeVariant(String(company.status ?? undefined))}>
@@ -387,12 +418,13 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
                             role="region"
                             aria-labelledby={`company-details-${company.id}`}
                           >
-                            {/* Header (company name + date + domain highlight) */}
+                            {/* Header (company name + full date + domain highlight) */}
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                               <div>
                                 <h3 id={`company-details-${company.id}`} className="text-lg font-semibold text-foreground">
                                   {formatValue(company.company_name)}
                                 </h3>
+                                {/* Keep full date in expanded details for clarity */}
                                 <div className="text-sm text-muted-foreground mt-1">{formatDate(company.created_at)}</div>
                               </div>
 
