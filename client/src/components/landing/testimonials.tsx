@@ -11,25 +11,25 @@ export default function Testimonials() {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6 drop-shadow-2xl">
             What Our Users Say
           </h2>
         </div>
         
         <div className="grid gap-6 sm:gap-8 sm:grid-cols-2">
           <div className="group relative bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1">
-            <blockquote className="text-base sm:text-lg text-gray-700 leading-relaxed mb-4 sm:mb-6 relative">
+            <blockquote className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6 relative">
               "This platform changed how we manage our funding pipeline. 
               It's like having a full operations team."
             </blockquote>
-            <footer className="font-semibold text-gray-900 text-sm sm:text-base">— Sarah L., Founder</footer>
+            <footer className="font-medium text-gray-700 text-sm sm:text-base">— Sarah L., Founder</footer>
           </div>
           
           <div className="group relative bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1">
-            <blockquote className="text-base sm:text-lg text-gray-700 leading-relaxed mb-4 sm:mb-6 relative">
+            <blockquote className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6 relative">
               "Clean, modern, and intuitive. The dark mode is gorgeous."
             </blockquote>
-            <footer className="font-semibold text-gray-900 text-sm sm:text-base">— David R., Investor</footer>
+            <footer className="font-medium text-gray-700 text-sm sm:text-base">— David R., Investor</footer>
           </div>
         </div>
       </div>

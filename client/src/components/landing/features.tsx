@@ -19,7 +19,7 @@ export default function Features() {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6 drop-shadow-2xl">
             Why Choose Us?
           </h2>
         </div>
@@ -41,10 +41,10 @@ export default function Features() {
               
               {/* Content */}
               <div className="relative">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 group-hover:text-purple-700 transition-colors duration-200">
+                <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-2 sm:mb-3 group-hover:text-purple-600 transition-colors duration-200">
                   {feature.title}
                 </h3>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
                   {feature.desc}
                 </p>
               </div>
