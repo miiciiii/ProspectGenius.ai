@@ -474,7 +474,8 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
                                 {company.contacts && company.contacts.length > 0 ? (
                                   company.contacts.map((c, idx) => (
                                     <ContactCard
-                                      key={c.email ?? c.full_name ?? `contact-${idx}`}
+                                      // Avoid empty-string keys by falling back to name / id / index
+                                      key={(c.email?.trim() || c.full_name?.trim() || (c as any).id || `contact-${idx}`).toString()}
                                       contact={c}
                                       onContact={() => setContactingCompany(company)}
                                     />

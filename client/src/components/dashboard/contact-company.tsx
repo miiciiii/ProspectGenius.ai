@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateCompany } from "@/hooks/use-companies";
 import type { Contact } from "@shared/schema";
 
@@ -13,7 +19,12 @@ interface ContactCompanyProps {
   onClose: () => void;
 }
 
-export function ContactCompany({ companyId, companyName, contacts = [], onClose }: ContactCompanyProps) {
+export function ContactCompany({
+  companyId,
+  companyName,
+  contacts = [],
+  onClose,
+}: ContactCompanyProps) {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [subject, setSubject] = useState(`Intro: ${companyName}`);
   const [message, setMessage] = useState(
@@ -26,13 +37,14 @@ export function ContactCompany({ companyId, companyName, contacts = [], onClose 
   useEffect(() => {
     if (contacts.length > 0) {
       setSelectedContact(contacts[0]);
+    } else {
+      setSelectedContact(null);
     }
   }, [contacts]);
 
   const handleSend = async () => {
     if (!selectedContact) return; // safety check
 
-    // Here you could also integrate actual email sending logic if needed
     await updateCompanyMutation.mutateAsync({
       id: companyId,
       updates: { status: "contacted" },
@@ -61,7 +73,8 @@ export function ContactCompany({ companyId, companyName, contacts = [], onClose 
               <Select
                 value={selectedContact?.email ?? ""}
                 onValueChange={(value) => {
-                  const contact = contacts.find((c) => c.email === value) || null;
+                  const contact =
+                    contacts.find((c) => c.email === value) || null;
                   setSelectedContact(contact);
                 }}
               >
@@ -69,20 +82,25 @@ export function ContactCompany({ companyId, companyName, contacts = [], onClose 
                   <SelectValue placeholder="Select contact" />
                 </SelectTrigger>
                 <SelectContent>
-                  {contacts.map((contact) => {
+                  {contacts.map((contact, index) => {
                     const email = contact.email ?? "";
                     const name = contact.full_name ?? "Unnamed";
+                    const itemValue = email || `no-email-${index}`; // ensure unique value
 
                     return (
-                      <SelectItem key={email || name} value={email}>
-                        {name} &lt;{email || "no-email"}&gt;
+                      <SelectItem key={itemValue} value={itemValue}>
+                        {name} {email ? `<${email}>` : "(no email)"}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
             ) : (
-              <Input value="No contacts available" disabled className="text-sm" />
+              <Input
+                value="No contacts available"
+                disabled
+                className="text-sm"
+              />
             )}
           </div>
 
