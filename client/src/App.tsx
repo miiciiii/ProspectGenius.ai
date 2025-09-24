@@ -33,6 +33,9 @@ import Pricing from "@/pages/pricing";
 import SubscriptionManagement from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
 
+// Landing page
+import LandingPage from "@/pages/landing/landing";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -53,6 +56,9 @@ function App() {
               {/* Public pricing page */}
               <Route path="/pricing" element={<Pricing />} />
 
+              {/* Public landing page */}
+              <Route path="/" element={<LandingPage />} />
+
               {/* Protected dashboard routes */}
               <Route
                 path="/"
@@ -62,6 +68,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Protected dashboard routes */}
               <Route
                 path="/dashboard"
                 element={
