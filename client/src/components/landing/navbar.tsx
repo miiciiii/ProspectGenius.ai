@@ -49,6 +49,13 @@ const LandingNavbar = () => {
             About
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
           </Link>
+          <Link 
+            to="/waiting-list" 
+            className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
+          >
+            Waiting List
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+          </Link>
         </nav>
 
         {/* Desktop Call to action */}
@@ -98,6 +105,13 @@ const LandingNavbar = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               About
+            </Link>
+            <Link 
+              to="/waiting-list" 
+              className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Waiting List
             </Link>
             <div className="pt-4 border-t space-y-3">
               <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>

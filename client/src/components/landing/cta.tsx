@@ -16,17 +16,17 @@ export default function CTA() {
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Main content */}
         <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6">
-          Ready to get started?
+          Does this align with what you're looking for?
         </h2>
         <p className="text-lg sm:text-xl text-white/95 max-w-xl sm:max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4 sm:px-0 font-light">
-          Join now and scale your business faster.
+          Come and be one of our waiting list.
         </p>
 
         {/* CTA Button */}
         <div className="flex justify-center px-4 sm:px-0">
-          <Link to="/auth/register" className="w-full sm:w-auto">
+          <Link to="/waiting-list" className="w-full sm:w-auto">
             <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 text-base px-6 sm:px-8 py-3 h-auto font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto">
-              Create Account
+              Waiting List
             </Button>
           </Link>
         </div>

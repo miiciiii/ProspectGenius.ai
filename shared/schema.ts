@@ -52,3 +52,16 @@ export interface DashboardStats {
   total_funding: string;
   contacted: number;
 }
+
+// Waiting list
+export interface WaitingListEntry {
+  id: string;
+  first_name: string;
+  last_name: string;
+  company_name: string;
+  email: string;
+  created_at: string;
+}
+
+// For inserting new waiting list entries
+export type InsertWaitingListEntry = Omit<WaitingListEntry, 'id' | 'created_at'>;

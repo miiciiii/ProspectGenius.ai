@@ -33,6 +33,7 @@ import NotFound from "@/pages/not-found";
 
 // Landing page
 import LandingPage from "@/pages/landing/landing";
+import WaitingList from "@/pages/waiting-list";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
 
             {/* Public landing page */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/waiting-list" element={<WaitingList />} />
 
             {/* Protected dashboard routes */}
             <Route

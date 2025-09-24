@@ -37,20 +37,18 @@ export default function Hero() {
           <span className="block">ProspectGenius.ai | AgentGenius.ai</span>
         </h1>
         
-        <p className="text-lg sm:text-xl text-white/95 max-w-2xl sm:max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4 sm:px-0 font-light">
+        <p className="text-xl sm:text-2xl md:text-3xl text-white max-w-2xl sm:max-w-3xl mx-auto mb-6 leading-relaxed px-4 sm:px-0 font-semibold tracking-wide drop-shadow-2xl">
           Discover Funded Startups. Before anyone else.
         </p>
+        <p className="text-lg sm:text-xl text-white/95 max-w-2xl sm:max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4 sm:px-0 font-light">
+          Does this align with what you're looking for? Come and be part of our waiting list.
+        </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
-          <Link to="/auth/register" className="w-full sm:w-auto">
-            <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 text-base px-6 sm:px-8 py-3 h-auto group w-full sm:w-auto font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-              Get Started
-            </Button>
-          </Link>
-          <Link to="/auth/login" className="w-full sm:w-auto">
-            <Button size="lg" variant="outline" className="text-base px-6 sm:px-8 py-3 h-auto border-2 border-white/30 hover:bg-white/20 text-white w-full sm:w-auto transition-all duration-300 hover:border-white/60 hover:text-white focus:ring-0 focus:ring-offset-0 hover:bg-white/20 hover:border-white/60">
-              Sign In
+        {/* CTA Button */}
+        <div className="flex justify-center px-4 sm:px-0">
+          <Link to="/waiting-list" className="w-full sm:w-auto">
+            <Button size="lg" className="bg-white text-purple-700 hover:bg-white/90 text-base px-6 sm:px-8 py-3 h-auto font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto">
+              Waiting List
             </Button>
           </Link>
         </div>
