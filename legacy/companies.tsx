@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { RefreshCw, Upload } from "lucide-react";
-import { StatsOverview } from "@/components/dashboard/stats-overview";
-import { HighlightsSection } from "@/components/dashboard/highlights-section";
+import MainLayout from "@/pages/main-layout";
 import { FilterControls } from "@/components/dashboard/filter-controls";
 import { CompaniesDataTable } from "@/components/dashboard/companies-data-table";
 import { Button } from "@/components/ui/button";
@@ -15,9 +14,8 @@ import {
   FeatureLimit,
 } from "@/components/subscription/subscription-gate";
 import type { CompanyFilters } from "@shared/schema";
-import MainLayout from "@/pages/main-layout";
 
-export default function Dashboard() {
+export default function Companies() {
   const [filters, setFilters] = useState<CompanyFilters>({});
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -40,10 +38,10 @@ export default function Dashboard() {
   const isLimitedUser = !canAccessPremiumFeatures && user?.role === "guest";
   const totalAvailable =
     (companiesResponse as any)?.total_available || companies.length;
+  const hasLimitMessage = (companiesResponse as any)?.message;
 
   const handleRefreshData = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
   };
 
   const handleExportCSV = () => {
@@ -52,15 +50,13 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="p-6 max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              ProspectGenius Dashboard
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">Companies</h1>
             <p className="text-muted-foreground mt-1">
-              Track newly funded startups and investment opportunities
+              Manage and explore all funded companies
               {isLimitedUser && totalAvailable > companies.length && (
                 <span className="text-amber-600 ml-2">
                   (Showing {companies.length} of {totalAvailable} companies)
@@ -71,7 +67,7 @@ export default function Dashboard() {
           <div className="flex items-center space-x-3">
             <SubscriptionGate
               feature="CSV Export"
-              description="Export filtered company data to CSV for analysis and reporting"
+              description="Export company data to CSV for analysis and reporting"
               showUpgrade={false}
               fallback={
                 <Button variant="outline" disabled>
@@ -100,56 +96,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <SubscriptionGate
-          feature="Advanced Analytics"
-          description="Get detailed insights and metrics about funding trends and company data"
-          showUpgrade={false}
-          fallback={
-            <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
-                  Advanced Analytics - Premium Feature
-                </h3>
-                <p className="text-sm mb-4">
-                  Get detailed insights and metrics about funding trends
-                </p>
-                <Button variant="default" size="sm">
-                  Upgrade to unlock
-                </Button>
-              </div>
-            </div>
-          }>
-          <div className="bg-card rounded-lg shadow p-4 border border-border">
-            <StatsOverview />
-          </div>
-        </SubscriptionGate>
-
-        {/* Highlights Section */}
-        <SubscriptionGate
-          feature="Daily Highlights"
-          description="Stay updated with curated highlights of the most important funding news"
-          showUpgrade={false}
-          fallback={
-            <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
-                  Daily Highlights - Premium Feature
-                </h3>
-                <p className="text-sm mb-4">
-                  Get curated highlights of important funding news
-                </p>
-                <Button variant="default" size="sm">
-                  Upgrade to unlock
-                </Button>
-              </div>
-            </div>
-          }>
-          <div className="bg-card rounded-lg shadow p-4 border border-border">
-            <HighlightsSection />
-          </div>
-        </SubscriptionGate>
-
         {/* Feature Limit Warning for Free Users */}
         {isLimitedUser && totalAvailable > companies.length && (
           <FeatureLimit
@@ -166,34 +112,34 @@ export default function Dashboard() {
           description="Use advanced filters to find companies by industry, funding stage, and more"
           showUpgrade={false}
           fallback={
-            <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
-                  Advanced Filtering - Premium Feature
-                </h3>
-                <p className="text-sm mb-4">
-                  Filter companies by industry, funding stage, and more
-                </p>
-                <Button variant="default" size="sm">
+            <div className="mb-6 p-4 border border-dashed border-amber-200 bg-amber-50 rounded-lg">
+              <p className="text-amber-800 text-center">
+                Advanced filtering is available for subscribers.
+                <Button variant="link" className="p-0 ml-1">
                   Upgrade to unlock
                 </Button>
-              </div>
+              </p>
             </div>
           }>
-          <div className="bg-card rounded-lg shadow p-4 border border-border">
-            <FilterControls
-              filters={filters}
-              onFiltersChange={setFilters}
-              totalCount={allCompanies.length}
-              filteredCount={companies.length}
-            />
-          </div>
+          <FilterControls
+            filters={filters}
+            onFiltersChange={setFilters}
+            totalCount={allCompanies.length}
+            filteredCount={companies.length}
+          />
         </SubscriptionGate>
 
+        {/* Limited Results Message */}
+        {hasLimitMessage && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm text-center">
+              {hasLimitMessage}
+            </p>
+          </div>
+        )}
+
         {/* Companies Table */}
-        <div className="bg-card rounded-lg shadow p-2 md:p-4 border border-border">
-          <CompaniesDataTable companies={companies} isLoading={isLoading} />
-        </div>
+        <CompaniesDataTable companies={companies} isLoading={isLoading} />
       </div>
     </MainLayout>
   );

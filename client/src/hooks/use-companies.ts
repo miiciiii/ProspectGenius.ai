@@ -11,27 +11,30 @@ import type {
 /** -----------------------------
  * Normalize filter values to match DB/API
  * ----------------------------- */
-function normalizeFilters(filters?: CompanyFilters): CompanyFilters | undefined {
+function normalizeFilters(
+  filters?: CompanyFilters
+): CompanyFilters | undefined {
   if (!filters) return undefined;
 
   const fundingStageMap: Record<string, string> = {
     "pre-seed": "Pre-Seed",
-    seed: "Seed",
+    "seed": "Seed",
     "series-a": "Series A",
     "series-b": "Series B",
     "series-c": "Series C",
   };
 
   const statusMap: Record<string, string> = {
-    new: "new",
-    contacted: "contacted",
+    "new": "new",
+    "contacted": "contacted",
     "follow-up": "follow-up",
   };
 
   return {
     ...filters,
     funding_stage: filters.funding_stage
-      ? fundingStageMap[filters.funding_stage.toLowerCase()] ?? filters.funding_stage
+      ? fundingStageMap[filters.funding_stage.toLowerCase()] ??
+        filters.funding_stage
       : undefined,
     status: filters.status
       ? statusMap[filters.status.toLowerCase()] ?? filters.status
@@ -48,10 +51,11 @@ export function useCompanies(filters?: CompanyFilters) {
   return useQuery({
     queryKey: ["/api/companies", normalizedFilters],
     queryFn: async () => {
-      const companies = await Api.getCompanies(normalizedFilters);
+      const response = await Api.getCompanies(normalizedFilters);
+      const companies = response.data ?? [];
 
       // Normalize arrays and contacts for frontend
-      return (companies as FundedCompany[]).map((c) => ({
+      return companies.map((c: FundedCompany) => ({
         ...c,
         investors: c.investors ?? [],
         social_media: c.social_media ?? [],
@@ -103,7 +107,11 @@ export function useCreateCompany() {
       toast({ title: "Success", description: "Company created successfully" });
     },
     onError: (error: Error) =>
-      toast({ variant: "destructive", title: "Error", description: error.message }),
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      }),
   });
 }
 
@@ -112,16 +120,27 @@ export function useUpdateCompany() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<FundedCompany> }) =>
-      Api.updateCompany(id, updates),
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<FundedCompany>;
+    }) => Api.updateCompany(id, updates),
     onSuccess: (updatedCompany: FundedCompany) => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/companies", updatedCompany.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/companies", updatedCompany.id],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({ title: "Success", description: "Company updated successfully" });
     },
     onError: (error: Error) =>
-      toast({ variant: "destructive", title: "Error", description: error.message }),
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      }),
   });
 }
 
@@ -137,7 +156,11 @@ export function useDeleteCompany() {
       toast({ title: "Success", description: "Company deleted successfully" });
     },
     onError: (error: Error) =>
-      toast({ variant: "destructive", title: "Error", description: error.message }),
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      }),
   });
 }
 
@@ -146,7 +169,8 @@ export function useBulkCreateCompanies() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (companies: InsertFundedCompany[]) => Api.bulkCreateCompanies(companies),
+    mutationFn: (companies: InsertFundedCompany[]) =>
+      Api.bulkCreateCompanies(companies),
     onSuccess: (createdCompanies: FundedCompany[]) => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
@@ -156,6 +180,10 @@ export function useBulkCreateCompanies() {
       });
     },
     onError: (error: Error) =>
-      toast({ variant: "destructive", title: "Import Failed", description: error.message }),
+      toast({
+        variant: "destructive",
+        title: "Import Failed",
+        description: error.message,
+      }),
   });
 }

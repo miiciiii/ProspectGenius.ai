@@ -48,7 +48,8 @@ export function Navbar() {
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return "U";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -166,12 +167,12 @@ export function Navbar() {
                 <button className="flex items-center space-x-2 p-1 rounded-md hover:bg-secondary transition-colors">
                   <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
                     <span className="text-accent-foreground text-sm font-medium">
-                      {user ? getInitials(user.name) : "U"}
+                      {user ? getInitials(user.full_name || user.email) : "U"}
                     </span>
                   </div>
                   <div className="hidden sm:block text-left">
                     <div className="text-sm font-medium text-foreground">
-                      {user?.name}
+                      {user?.full_name || user?.email}
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge
@@ -189,7 +190,9 @@ export function Navbar() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-sm font-medium">
+                      {user?.full_name || user?.email}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {user?.email}
                     </p>
