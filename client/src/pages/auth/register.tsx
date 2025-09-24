@@ -57,7 +57,7 @@ export default function Register() {
 
     setIsLoading(true);
 
-    const result = await register({ name, email, password });
+    const result = await register({ full_name: name, email, password });
 
     if (!result.success) {
       alert(result.error || "Registration failed");
