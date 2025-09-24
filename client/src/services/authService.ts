@@ -1,10 +1,12 @@
-// Mock authentication service using localStorage
+import { supabase } from "@/lib/supabaseClient";
+import type { Profile } from "@shared/schema";
+
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: "admin" | "subscriber" | "guest";
-  token: string;
+  full_name?: string;
+  role: string;
+  profile?: Profile;
 }
 
 export interface LoginCredentials {
@@ -13,60 +15,48 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  name: string;
+  full_name: string;
   email: string;
   password: string;
 }
 
-// Mock users database (in real app this would be on the server)
-const MOCK_USERS_KEY = "prospect_genius_users";
-const CURRENT_USER_KEY = "prospect_genius_current_user";
+// Get the auth token for API requests
+const getAuthToken = async (): Promise<string | null> => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token || null;
+};
 
-// Initialize with some default users
-const initializeMockUsers = () => {
-  const existingUsers = localStorage.getItem(MOCK_USERS_KEY);
-  if (!existingUsers) {
-    const defaultUsers = [
-      {
-        id: "1",
-        name: "Admin User",
-        email: "admin@example.com",
-        password: "admin123",
-        role: "admin" as const,
-      },
-      {
-        id: "2",
-        name: "Subscriber User",
-        email: "subscriber@example.com",
-        password: "subscriber123",
-        role: "subscriber" as const,
-      },
-      {
-        id: "3",
-        name: "Guest User",
-        email: "guest@example.com",
-        password: "guest123",
-        role: "guest" as const,
-      },
-    ];
-    localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(defaultUsers));
+// Make authenticated API requests
+const apiRequest = async (method: string, endpoint: string, body?: any) => {
+  const token = await getAuthToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
-};
 
-// Initialize mock users on module load
-initializeMockUsers();
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL || ""}${endpoint}`,
+    {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    }
+  );
 
-const generateToken = (): string => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || `HTTP ${response.status}`);
+  }
 
-const getMockUsers = () => {
-  const users = localStorage.getItem(MOCK_USERS_KEY);
-  return users ? JSON.parse(users) : [];
-};
-
-const saveMockUsers = (users: any[]) => {
-  localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(users));
+  return response;
 };
 
 export const authService = {
@@ -74,114 +64,269 @@ export const authService = {
   registerUser: async (
     userData: RegisterData
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const users = getMockUsers();
+    try {
+      // Sign up with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.full_name,
+          },
+        },
+      });
 
-        // Check if user already exists
-        const existingUser = users.find(
-          (user: any) => user.email === userData.email
-        );
-        if (existingUser) {
-          resolve({
-            success: false,
-            error: "User already exists with this email",
-          });
-          return;
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: "Registration failed" };
+      }
+
+      // Sync profile with backend
+      try {
+        if (import.meta.env.VITE_API_URL) {
+          await apiRequest("POST", "/api/auth/sync");
         }
+      } catch (syncError) {
+        console.warn("Profile sync failed (backend not available):", syncError);
+      }
 
-        // Create new user
-        const newUser = {
-          id: (users.length + 1).toString(),
-          name: userData.name,
-          email: userData.email,
-          password: userData.password,
-          role: "subscriber" as const, // Default role for new users
-        };
+      // Get user profile
+      let profile: Profile | null = null;
+      try {
+        profile = await authService.getCurrentUserProfile();
+      } catch (profileError) {
+        console.warn(
+          "Could not fetch profile during registration:",
+          profileError
+        );
+      }
 
-        users.push(newUser);
-        saveMockUsers(users);
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email!,
+        full_name: userData.full_name,
+        role: profile?.role || "guest",
+        profile: profile || undefined,
+      };
 
-        // Create user object without password
-        const userWithToken: User = {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          token: generateToken(),
-        };
-
-        // Store current user
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userWithToken));
-
-        resolve({ success: true, user: userWithToken });
-      }, 500); // Simulate network delay
-    });
+      return { success: true, user };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Registration failed",
+      };
+    }
   },
 
   // Login user
   loginUser: async (
     credentials: LoginCredentials
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const users = getMockUsers();
+    console.log("loginUser: Starting login process");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-        // Find user with matching email and password
-        const user = users.find(
-          (u: any) =>
-            u.email === credentials.email && u.password === credentials.password
-        );
+      console.log("loginUser: Supabase auth response:", data, error);
 
-        if (!user) {
-          resolve({ success: false, error: "Invalid email or password" });
-          return;
+      if (error) {
+        console.log("loginUser: Supabase auth error:", error);
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        console.log("loginUser: No user returned from Supabase");
+        return { success: false, error: "Login failed" };
+      }
+
+      console.log("loginUser: Supabase auth successful, fetching profile");
+
+      // Fetch the user profile to get the correct role
+      let profile: Profile | null = null;
+      try {
+        console.log("loginUser: Fetching profile from database");
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profileError) {
+          console.log("loginUser: Profile fetch error:", profileError);
+          // If profile doesn't exist, create one
+          if (profileError.code === "PGRST116") {
+            console.log("loginUser: Profile not found, creating new profile");
+            const { data: newProfile, error: createError } = await supabase
+              .from("profiles")
+              .insert({
+                id: data.user.id,
+                full_name: data.user.user_metadata?.full_name || "",
+                role: "guest",
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.log("loginUser: Error creating profile:", createError);
+            } else {
+              profile = newProfile;
+              console.log("loginUser: Created new profile:", profile);
+            }
+          }
+        } else {
+          profile = profileData;
+          console.log("loginUser: Profile fetched successfully:", profile);
         }
+      } catch (profileError) {
+        console.warn(
+          "loginUser: Could not fetch/create profile:",
+          profileError
+        );
+      }
 
-        // Create user object without password
-        const userWithToken: User = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          token: generateToken(),
-        };
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email!,
+        full_name:
+          data.user.user_metadata?.full_name || profile?.full_name || "",
+        role: profile?.role || "guest", // Use role from profiles table, not from auth.user
+        profile: profile || undefined,
+      };
 
-        // Store current user
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userWithToken));
-
-        resolve({ success: true, user: userWithToken });
-      }, 500); // Simulate network delay
-    });
+      console.log("loginUser: Login completed successfully with user:", user);
+      return { success: true, user };
+    } catch (error) {
+      console.log("loginUser: Unexpected error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Login failed",
+      };
+    }
   },
 
   // Logout user
   logoutUser: async (): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        localStorage.removeItem(CURRENT_USER_KEY);
-        resolve();
-      }, 100);
-    });
+    await supabase.auth.signOut();
   },
 
   // Get current user
-  getCurrentUser: (): User | null => {
-    const userJson = localStorage.getItem(CURRENT_USER_KEY);
-    if (!userJson) return null;
-
+  getCurrentUser: async (): Promise<User | null> => {
     try {
-      return JSON.parse(userJson);
-    } catch {
-      // If JSON is corrupted, remove it
-      localStorage.removeItem(CURRENT_USER_KEY);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return null;
+
+      // Try to get profile, but don't fail if it doesn't exist
+      let profile: Profile | null = null;
+      try {
+        profile = await authService.getCurrentUserProfile();
+      } catch (profileError) {
+        console.warn(
+          "Could not fetch profile, using default role:",
+          profileError
+        );
+      }
+
+      return {
+        id: user.id,
+        email: user.email!,
+        full_name: user.user_metadata?.full_name || profile?.full_name || "",
+        role: profile?.role || "guest", // Default to guest if no profile
+        profile: profile || undefined,
+      };
+    } catch (error) {
+      console.error("Error getting current user:", error);
       return null;
     }
   },
 
+  // Get current user profile from backend
+  getCurrentUserProfile: async (): Promise<Profile | null> => {
+    console.log("getCurrentUserProfile: Starting profile fetch");
+    try {
+      // First check if backend is available
+      if (!import.meta.env.VITE_API_URL) {
+        console.warn("Backend API URL not configured, using default role");
+        return null;
+      }
+
+      console.log("getCurrentUserProfile: Making API request to backend");
+      const response = await apiRequest("GET", "/api/auth/profile");
+      const data = await response.json();
+      console.log("getCurrentUserProfile: Backend response:", data);
+      return data.user?.profile || null;
+    } catch (error) {
+      console.warn(
+        "Backend not available, using Supabase profile data:",
+        error
+      );
+
+      // Fallback: try to get profile directly from Supabase
+      try {
+        console.log("getCurrentUserProfile: Trying Supabase fallback");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          console.log("getCurrentUserProfile: No user found in Supabase");
+          return null;
+        }
+
+        console.log(
+          "getCurrentUserProfile: Fetching profile from Supabase for user:",
+          user.id
+        );
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError) {
+          console.warn(
+            "getCurrentUserProfile: Supabase profile error:",
+            profileError
+          );
+        }
+
+        console.log("getCurrentUserProfile: Supabase profile result:", profile);
+        return profile || null;
+      } catch (supabaseError) {
+        console.warn("Supabase profile fetch failed:", supabaseError);
+        return null;
+      }
+    }
+  },
+
+  // Update user profile
+  updateProfile: async (updates: {
+    full_name?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await apiRequest("PATCH", "/api/auth/profile", updates);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to update profile",
+      };
+    }
+  },
+
   // Check if user is authenticated
-  isAuthenticated: (): boolean => {
-    return authService.getCurrentUser() !== null;
+  isAuthenticated: async (): Promise<boolean> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return !!session;
   },
 
   // Update user role (admin only functionality)
@@ -189,37 +334,18 @@ export const authService = {
     userId: string,
     newRole: User["role"]
   ): Promise<{ success: boolean; error?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const currentUser = authService.getCurrentUser();
-        if (!currentUser || currentUser.role !== "admin") {
-          resolve({
-            success: false,
-            error: "Unauthorized: Admin access required",
-          });
-          return;
-        }
-
-        const users = getMockUsers();
-        const userIndex = users.findIndex((u: any) => u.id === userId);
-
-        if (userIndex === -1) {
-          resolve({ success: false, error: "User not found" });
-          return;
-        }
-
-        users[userIndex].role = newRole;
-        saveMockUsers(users);
-
-        // Update current user if they're updating their own role
-        if (currentUser.id === userId) {
-          const updatedUser = { ...currentUser, role: newRole };
-          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-        }
-
-        resolve({ success: true });
-      }, 300);
-    });
+    try {
+      await apiRequest("PATCH", `/api/auth/profiles/${userId}/role`, {
+        role: newRole,
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to update user role",
+      };
+    }
   },
 
   // Get all users (admin only)
@@ -228,27 +354,66 @@ export const authService = {
     users?: Omit<User, "token">[];
     error?: string;
   }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const currentUser = authService.getCurrentUser();
-        if (!currentUser || currentUser.role !== "admin") {
-          resolve({
-            success: false,
-            error: "Unauthorized: Admin access required",
-          });
-          return;
+    try {
+      const response = await apiRequest("GET", "/api/auth/profiles");
+      const profiles = await response.json();
+
+      const users = profiles.map((profile: Profile) => ({
+        id: profile.id,
+        email: "", // Email not returned for privacy
+        full_name: profile.full_name,
+        role: profile.role,
+      }));
+
+      return { success: true, users };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch users",
+      };
+    }
+  },
+
+  // Listen to auth state changes
+  onAuthStateChange: (callback: (user: User | null) => void) => {
+    return supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("onAuthStateChange: Event:", event, "Session:", !!session);
+      if (session?.user) {
+        // Try to get profile with timeout, but don't fail if it doesn't work
+        let profile: Profile | null = null;
+        try {
+          console.log("onAuthStateChange: Fetching profile with timeout");
+          // Add a timeout to prevent hanging
+          const profilePromise = authService.getCurrentUserProfile();
+          const timeoutPromise = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error("Profile fetch timeout")), 10000)
+          );
+
+          profile = await Promise.race([profilePromise, timeoutPromise]);
+          console.log("onAuthStateChange: Profile fetch successful:", profile);
+        } catch (profileError) {
+          console.warn(
+            "Could not fetch profile during auth state change:",
+            profileError
+          );
         }
 
-        const users = getMockUsers();
-        const usersWithoutPasswords = users.map((user: any) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        }));
-
-        resolve({ success: true, users: usersWithoutPasswords });
-      }, 300);
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email!,
+          full_name:
+            session.user.user_metadata?.full_name || profile?.full_name || "",
+          role: profile?.role || "guest",
+          profile: profile || undefined,
+        };
+        // console.log("onAuthStateChange: Calling callback with user:", user);
+        callback(user);
+      } else {
+        console.log(
+          "onAuthStateChange: No session, calling callback with null"
+        );
+        callback(null);
+      }
     });
   },
 };

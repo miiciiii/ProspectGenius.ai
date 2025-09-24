@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/auth-context";
+import { SubscriptionProvider } from "@/context/subscription-context";
 import {
   ProtectedRoute,
   AdminRoute,
@@ -28,114 +29,141 @@ import Billing from "@/pages/administration/billing";
 import ApiKeysDataSources from "@/pages/integrations/api-keys-data-sources";
 import Playbooks from "@/pages/workflows/playbooks";
 import Automations from "@/pages/workflows/automations";
+import Pricing from "@/pages/pricing";
+import SubscriptionManagement from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Routes>
-            {/* Public auth routes */}
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<Register />} />
-            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
+        <SubscriptionProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Routes>
+              {/* Public auth routes */}
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<Register />} />
+              <Route
+                path="/auth/forgot-password"
+                element={<ForgotPassword />}
+              />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-            {/* Protected dashboard routes */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Public pricing page */}
+              <Route path="/pricing" element={<Pricing />} />
 
-            {/* Subscriber and Admin routes */}
-            <Route
-              path="/companies"
-              element={
-                <SubscriberRoute>
-                  <Companies />
-                </SubscriberRoute>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <SubscriberRoute>
-                  <Analytics />
-                </SubscriberRoute>
-              }
-            />
-            <Route
-              path="/sources"
-              element={
-                <SubscriberRoute>
-                  <Sources />
-                </SubscriberRoute>
-              }
-            />
-            <Route
-              path="/integrations"
-              element={
-                <SubscriberRoute>
-                  <ApiKeysDataSources />
-                </SubscriberRoute>
-              }
-            />
-            <Route
-              path="/playbooks"
-              element={
-                <SubscriberRoute>
-                  <Playbooks />
-                </SubscriberRoute>
-              }
-            />
-            <Route
-              path="/automations"
-              element={
-                <SubscriberRoute>
-                  <Automations />
-                </SubscriberRoute>
-              }
-            />
+              {/* Protected dashboard routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Navigate to="/dashboard" replace />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Settings accessible to all authenticated users */}
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
+              {/* Basic access routes - all authenticated users can view */}
+              <Route
+                path="/companies"
+                element={
+                  <ProtectedRoute>
+                    <Companies />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Admin-only routes */}
-            <Route
-              path="/team"
-              element={
-                <AdminRoute>
-                  <TeamManagement />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/billing"
-              element={
-                <AdminRoute>
-                  <Billing />
-                </AdminRoute>
-              }
-            />
+              {/* Subscriber and Admin routes */}
+              <Route
+                path="/analytics"
+                element={
+                  <SubscriberRoute>
+                    <Analytics />
+                  </SubscriberRoute>
+                }
+              />
+              <Route
+                path="/sources"
+                element={
+                  <SubscriberRoute>
+                    <Sources />
+                  </SubscriberRoute>
+                }
+              />
+              <Route
+                path="/integrations"
+                element={
+                  <SubscriberRoute>
+                    <ApiKeysDataSources />
+                  </SubscriberRoute>
+                }
+              />
+              <Route
+                path="/playbooks"
+                element={
+                  <SubscriberRoute>
+                    <Playbooks />
+                  </SubscriberRoute>
+                }
+              />
+              <Route
+                path="/automations"
+                element={
+                  <SubscriberRoute>
+                    <Automations />
+                  </SubscriberRoute>
+                }
+              />
 
-            {/* 404 fallback */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+              {/* Settings and subscription management accessible to all authenticated users */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <SubscriptionManagement />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin-only routes */}
+              <Route
+                path="/team"
+                element={
+                  <AdminRoute>
+                    <TeamManagement />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/billing"
+                element={
+                  <AdminRoute>
+                    <Billing />
+                  </AdminRoute>
+                }
+              />
+
+              {/* 404 fallback */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </SubscriptionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

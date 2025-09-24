@@ -12,6 +12,7 @@ import {
   LoginCredentials,
   RegisterData,
 } from "@/services/authService";
+import type { Profile } from "@shared/schema";
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,9 @@ interface AuthContextType {
     userData: RegisterData
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updateProfile: (updates: {
+    full_name?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   updateUserRole: (
     userId: string,
     newRole: User["role"]
@@ -33,6 +37,7 @@ interface AuthContextType {
     error?: string;
   }>;
   isAuthenticated: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,27 +51,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check for existing user session on mount
+  // Initialize user and set up auth state listener
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
-  }, []);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (mounted) {
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // initializeAuth();
+
+    // Set up auth state change listener
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange((user) => {
+      if (mounted) {
+        setUser(user);
+        if (!user && window.location.pathname.startsWith("/dashboard")) {
+          navigate("/auth/login");
+        }
+      }
+    });
+
+    // Initialize auth state
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
+  }, [navigate]);
+
+  const refreshUser = async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+      setUser(null);
+    }
+  };
 
   const login = async (credentials: LoginCredentials) => {
+    console.log("AuthContext login: Starting login");
     setIsLoading(true);
     try {
       const result = await authService.loginUser(credentials);
-      if (result.success && result.user) {
-        setUser(result.user);
-        navigate("/dashboard");
+      console.log("AuthContext login: authService result:", result);
+      if (result.success) {
+        console.log(
+          "AuthContext login: Login successful, auth state change will update user"
+        );
+        // Don't navigate here - let the auth state change and routing handle navigation
         return { success: true };
       } else {
+        console.log("AuthContext login: Login failed:", result.error);
         return { success: false, error: result.error || "Login failed" };
       }
     } catch (error) {
+      console.log("AuthContext login: Unexpected error:", error);
       return { success: false, error: "An unexpected error occurred" };
     } finally {
+      console.log("AuthContext login: Setting loading to false");
       setIsLoading(false);
     }
   };
@@ -102,6 +162,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateProfile = async (updates: { full_name?: string }) => {
+    try {
+      const result = await authService.updateProfile(updates);
+      if (result.success) {
+        // Refresh user data
+        await refreshUser();
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: "An unexpected error occurred" };
+    }
+  };
+
   const updateUserRole = async (userId: string, newRole: User["role"]) => {
     try {
       const result = await authService.updateUserRole(userId, newRole);
@@ -131,9 +204,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
     updateUserRole,
     getAllUsers,
     isAuthenticated: !!user,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
