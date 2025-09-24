@@ -62,10 +62,23 @@ const formatFundingAmount = (amount?: number | null): string => {
   return `$${val}`;
 };
 
+// Keep the full formatted date helper for screen readers / tooltips if needed
 const formatDate = (value?: string | null) => {
   if (!value) return UNDECLARED;
   try {
     return format(new Date(value), "MMM dd, yyyy");
+  } catch {
+    return UNDECLARED;
+  }
+};
+
+// New helper: only render the year (or UNDECLARED)
+const formatYear = (value?: string | null) => {
+  if (!value) return UNDECLARED;
+  try {
+    const d = new Date(value);
+    const y = d.getFullYear();
+    return Number.isFinite(y) && !Number.isNaN(y) ? String(y) : UNDECLARED;
   } catch {
     return UNDECLARED;
   }
@@ -258,7 +271,8 @@ export function CompanyReportsTable({ data, isLoading, itemsPerPage }: Props) {
 
                 return (
                   <Fragment key={rowKey}>
-                    <tr className="hover:bg-muted/30 transition-colors">
+                    {/* Add `group` so children can react to row hover */}
+                    <tr className="group hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-2 align-top">
                         <Button
                           variant="ghost"
@@ -296,8 +310,29 @@ export function CompanyReportsTable({ data, isLoading, itemsPerPage }: Props) {
                         </Badge>
                       </td>
 
-                      <td className="px-4 py-3 text-sm text-muted-foreground align-top">
-                        {report.funding_date ? formatDate(report.funding_date) : UNDECLARED}
+                      {/* DATE cell: render year only and show a hover tooltip on row hover */}
+                      <td className="px-4 py-3 text-sm text-muted-foreground align-top relative">
+                        {report.funding_date ? (
+                          <>
+                            <div className="inline-flex items-center gap-2">
+                              <span className="font-medium">{formatYear(report.funding_date)}</span>
+                              {/* Hidden to sighted users but useful for screen readers */}
+                              <span className="sr-only">Full date: {formatDate(report.funding_date)}</span>
+                            </div>
+
+                            {/* Tooltip shown when the user hovers anywhere on the row (via `group-hover` on the tr) */}
+                            <div
+                              role="tooltip"
+                              className="absolute left-1/2 transform -translate-x-1/2 -top-9 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150 pointer-events-none"
+                            >
+                              <div className="whitespace-nowrap rounded-md px-3 py-1 text-xs shadow-lg bg-black text-white">
+                                disclaimer this is only an estimate date
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          UNDECLARED
+                        )}
                       </td>
 
                       <td className="px-4 py-3 text-sm text-foreground align-top">
