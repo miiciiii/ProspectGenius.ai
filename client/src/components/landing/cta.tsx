@@ -19,7 +19,7 @@ export default function CTA() {
           Does this align with what you're looking for?
         </h2>
         <p className="text-lg sm:text-xl text-white/95 max-w-xl sm:max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4 sm:px-0 font-light">
-          Come and be one of our waiting list.
+          Come and be one of our list.
         </p>
 
         {/* CTA Button */}
