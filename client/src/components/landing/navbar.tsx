@@ -1,13 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const LandingNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Track scroll for shadow/fade effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Smooth scroll with offset for sticky navbar
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const navbarHeight = document.querySelector("header")?.clientHeight || 0;
+      const top = el.getBoundingClientRect().top + window.scrollY - navbarHeight;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  };
+
+  const sections = ["features", "pricing", "about"];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90 shadow-sm">
+    <header
+      className={`sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90 transition-shadow duration-300 ${
+        scrolled ? "shadow-md" : "shadow-sm"
+      }`}
+    >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -26,31 +52,20 @@ const LandingNavbar = () => {
           </div>
         </Link>
 
-        {/* Desktop Nav links */}
+        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-          <Link 
-            to="/#features" 
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
-          >
-            Features
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-          </Link>
-          <Link 
-            to="/#pricing" 
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
-          >
-            Pricing
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-          </Link>
-          <Link 
-            to="/#about" 
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
-          >
-            About
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-          </Link>
-          <Link 
-            to="/waiting-list" 
+          {sections.map((section) => (
+            <button
+              key={section}
+              onClick={() => scrollToSection(section)}
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
+            >
+              {section.charAt(0).toUpperCase() + section.slice(1)}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+            </button>
+          ))}
+          <Link
+            to="/waiting-list"
             className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 relative group"
           >
             Waiting List
@@ -58,7 +73,7 @@ const LandingNavbar = () => {
           </Link>
         </nav>
 
-        {/* Desktop Call to action */}
+        {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
           <Link to="/auth/login">
             <Button variant="ghost" size="sm" className="text-sm font-medium text-gray-700 hover:text-gray-900">
@@ -72,7 +87,7 @@ const LandingNavbar = () => {
           </Link>
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="md:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
@@ -81,38 +96,30 @@ const LandingNavbar = () => {
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t bg-white/95 backdrop-blur-md">
           <div className="px-4 py-4 space-y-4">
-            <Link 
-              to="/#features" 
-              className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Features
-            </Link>
-            <Link 
-              to="/#pricing" 
-              className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </Link>
-            <Link 
-              to="/#about" 
-              className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              About
-            </Link>
-            <Link 
-              to="/waiting-list" 
+            {sections.map((section) => (
+              <button
+                key={section}
+                className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2 w-full text-left"
+                onClick={() => {
+                  scrollToSection(section);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                {section.charAt(0).toUpperCase() + section.slice(1)}
+              </button>
+            ))}
+            <Link
+              to="/waiting-list"
               className="block text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Waiting List
             </Link>
+
             <div className="pt-4 border-t space-y-3">
               <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start text-gray-700">
@@ -120,9 +127,7 @@ const LandingNavbar = () => {
                 </Button>
               </Link>
               <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full btn-gradient">
-                  Get Started
-                </Button>
+                <Button className="w-full btn-gradient">Get Started</Button>
               </Link>
             </div>
           </div>

@@ -8,9 +8,9 @@ export default function LandingPage() {
   return (
     <LandingLayout>
       <Hero />
+      <CTA />
       <Features />
       <Testimonials />
-      <CTA />
     </LandingLayout>
   );
 }
