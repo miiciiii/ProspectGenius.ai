@@ -17,23 +17,12 @@ const GoogleIcon = () => (
   <svg
     className="w-5 h-5"
     viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      fill="#4285F4"
-    />
-    <path
-      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      fill="#34A853"
-    />
-    <path
-      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      fill="#FBBC05"
-    />
-    <path
-      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      fill="#EA4335"
-    />
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
   </svg>
 );
 
@@ -50,20 +39,50 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Basic client-side validation
+    if (!name.trim()) {
+      alert("Please enter your full name.");
+      return;
+    }
+    if (!email.trim()) {
+      alert("Please enter your email.");
+      return;
+    }
+    // simple email sanity check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      alert("Please enter a password.");
+      return;
+    }
     if (password !== confirmPassword) {
-      alert("Passwords don't match");
+      alert("Passwords don't match.");
       return;
     }
 
     setIsLoading(true);
 
-    const result = await register({ full_name: name, email, password });
-
-    if (!result.success) {
-      alert(result.error || "Registration failed");
+    try {
+      // adapt payload shape to your backend if needed
+      const result = await register({ full_name: name, email, password });
+      // handle both thrown errors and returned error object
+      if (!result || !result.success) {
+        alert(result?.error || "Registration failed. Please try again.");
+        return;
+      }
+      // success: you may want to redirect (use navigate) or show a success toast
+      // e.g. navigate("/auth/verify-email") — keep behavior consistent with your app
+      alert("Account created successfully. Please check your email (if verification is required).");
+    } catch (err: any) {
+      // network or unexpected error
+      console.error("Registration error:", err);
+      alert(err?.message || "Unexpected error during registration.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleGoogleSignUp = () => {
@@ -72,26 +91,25 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8">
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      {/* Background elements (ensure they don't intercept events and sit behind the card) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/10 rounded-full blur-2xl animate-pulse delay-500" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Back button */}
+      <div className="relative w-full max-w-md z-20">
         <div className="mb-6">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Back to home</span>
           </Link>
         </div>
 
-        <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl">
+        <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl relative z-20">
           <CardHeader className="space-y-2 text-center pb-8">
             <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-4">
               <span className="text-white font-bold text-lg">P</span>
@@ -103,15 +121,16 @@ export default function Register() {
               Enter your details to create your account
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <Button
               onClick={handleGoogleSignUp}
               variant="outline"
-              className="w-full h-12 text-base font-medium border-2 hover:bg-primary/5 transition-all duration-200"
-              type="button">
+              type="button"
+              className="w-full h-12 text-base font-medium border-2 hover:bg-primary/5 transition-all duration-200 flex items-center justify-center gap-3"
+            >
               <GoogleIcon />
-              Sign up with Google
+              <span>Sign up with Google</span>
             </Button>
 
             <div className="relative">
@@ -125,80 +144,114 @@ export default function Register() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-gray-800">
+                  Full Name
+                </Label>
                 <Input
                   id="name"
+                  name="name"
                   type="text"
+                  inputMode="text"
+                  autoComplete="name"
+                  aria-label="Full name"
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
                   required
+                  spellCheck={false}
+                  className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors"
+                  style={{ caretColor: "#7c3aed" }}
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-800">
+                  Email
+                </Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  aria-label="Email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
                   required
+                  spellCheck={false}
+                  className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors"
+                  style={{ caretColor: "#7c3aed" }}
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-800">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    aria-label="Password"
                     placeholder="Create a password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors pr-12"
                     required
+                    spellCheck={false}
+                    className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors pr-12"
+                    style={{ caretColor: "#7c3aed" }}
                   />
                   <button
                     type="button"
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors bg-transparent p-1 rounded"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">Confirm Password</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-800">
+                  Confirm Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
+                    name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    aria-label="Confirm password"
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors pr-12"
                     required
+                    spellCheck={false}
+                    className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors pr-12"
+                    style={{ caretColor: "#7c3aed" }}
                   />
                   <button
                     type="button"
+                    aria-pressed={showConfirmPassword}
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors bg-transparent p-1 rounded"
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200" 
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating account..." : "Create account"}
@@ -207,10 +260,7 @@ export default function Register() {
 
             <div className="text-center text-sm pt-4">
               <span className="text-gray-500">Already have an account? </span>
-              <Link 
-                to="/auth/login" 
-                className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
-              >
+              <Link to="/auth/login" className="text-purple-600 hover:text-purple-700 font-medium transition-colors">
                 Sign in
               </Link>
             </div>

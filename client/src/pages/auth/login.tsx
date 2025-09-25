@@ -56,7 +56,7 @@ export default function Login() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
       </div>
     );
   }
@@ -80,26 +80,26 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8">
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/10 rounded-full blur-2xl animate-pulse delay-500"></div>
+      {/* Background elements (lower z so card stays readable) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-white/10 rounded-full blur-2xl animate-pulse delay-500" />
       </div>
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md z-20">
         {/* Back button */}
         <div className="mb-6">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Back to home</span>
           </Link>
         </div>
 
-        <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl">
+        <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl relative z-20">
           <CardHeader className="space-y-2 text-center pb-8">
             <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-4">
               <span className="text-white font-bold text-lg">P</span>
@@ -111,15 +111,16 @@ export default function Login() {
               Sign in to your account to continue
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <Button
               onClick={handleGoogleSignIn}
               variant="outline"
-              className="w-full h-12 text-base font-medium border-2 hover:bg-primary/5 transition-all duration-200"
-              type="button">
+              className="w-full h-12 text-base font-medium border-2 hover:bg-primary/5 transition-all duration-200 flex items-center justify-center gap-3"
+              type="button"
+            >
               <GoogleIcon />
-              Sign in with Google
+              <span>Sign in with Google</span>
             </Button>
 
             <div className="relative">
@@ -133,38 +134,60 @@ export default function Login() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-800">
+                  Email
+                </Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  aria-label="Email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
                   required
+                  spellCheck={false}
+                  // explicitly set visible text color + placeholder + caret
+                  className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors"
+                  style={{ caretColor: "#7c3aed" }}
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-800">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    aria-label="Password"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors pr-12"
                     required
+                    spellCheck={false}
+                    className="h-12 text-base text-gray-900 placeholder-gray-400 border-2 border-gray-200 bg-white/80 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition-colors pr-12"
+                    style={{ caretColor: "#7c3aed" }}
                   />
                   <button
                     type="button"
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors bg-transparent p-1 rounded"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -172,14 +195,15 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <Link
                   to="/auth/forgot-password"
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors">
+                  className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200" 
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={isLoading}
               >
                 {isLoading ? "Signing in..." : "Sign in"}
@@ -188,8 +212,8 @@ export default function Login() {
 
             <div className="text-center text-sm pt-4">
               <span className="text-gray-500">Don't have an account? </span>
-              <Link 
-                to="/auth/register" 
+              <Link
+                to="/auth/register"
                 className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
               >
                 Sign up
