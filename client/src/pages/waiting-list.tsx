@@ -27,31 +27,30 @@ export default function WaitingList() {
 
     try {
       const { error } = await supabase
-        .from('waiting_list')
+        .from("waiting_list")
         .insert([
           {
             first_name: firstName,
             last_name: lastName,
             company_name: companyName,
             email: email,
-            created_at: new Date().toISOString()
-          }
+            created_at: new Date().toISOString(),
+          },
         ]);
 
       if (error) {
-        console.error('Error submitting to waiting list:', error);
-        alert('There was an error submitting your information. Please try again.');
+        console.error("Error submitting to waiting list:", error);
+        alert("There was an error submitting your information. Please try again.");
       } else {
         setIsSubmitted(true);
-        // Reset form
         setFirstName("");
         setLastName("");
         setCompanyName("");
         setEmail("");
       }
     } catch (error) {
-      console.error('Error submitting to waiting list:', error);
-      alert('There was an error submitting your information. Please try again.');
+      console.error("Error submitting to waiting list:", error);
+      alert("There was an error submitting your information. Please try again.");
     }
 
     setIsLoading(false);
@@ -59,7 +58,7 @@ export default function WaitingList() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8 relative overflow-hidden">
         {/* Background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
@@ -68,7 +67,7 @@ export default function WaitingList() {
         </div>
 
         <div className="relative w-full max-w-md">
-          <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl">
+          <Card className="bg-white border border-gray-200 shadow-2xl rounded-2xl">
             <CardHeader className="space-y-2 text-center pb-8">
               <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-white" />
@@ -76,11 +75,11 @@ export default function WaitingList() {
               <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-green-600 bg-clip-text text-transparent">
                 Thank You!
               </CardTitle>
-              <CardDescription className="text-base text-gray-600">
+              <CardDescription className="text-base text-gray-700">
                 You've been added to our waiting list. We'll notify you when we launch!
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="space-y-6">
               <div className="text-center">
                 <Link to="/">
@@ -97,7 +96,7 @@ export default function WaitingList() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-purple-500 to-orange-400 px-4 py-8 relative overflow-hidden">
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
@@ -108,8 +107,8 @@ export default function WaitingList() {
       <div className="relative w-full max-w-md">
         {/* Back button */}
         <div className="mb-6">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -117,7 +116,7 @@ export default function WaitingList() {
           </Link>
         </div>
 
-        <Card className="backdrop-blur-sm bg-white/95 border-white/20 shadow-2xl">
+        <Card className="bg-white border border-gray-200 shadow-2xl rounded-2xl">
           <CardHeader className="space-y-2 text-center pb-8">
             <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center mb-4">
               <span className="text-white font-bold text-lg">P</span>
@@ -125,70 +124,78 @@ export default function WaitingList() {
             <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-purple-600 bg-clip-text text-transparent">
               Join Our Waiting List
             </CardTitle>
-            <CardDescription className="text-base text-gray-600">
+            <CardDescription className="text-base text-gray-700">
               Be the first to know when we launch
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
+                  <Label htmlFor="firstName" className="text-sm font-medium text-gray-900">
+                    First Name
+                  </Label>
                   <Input
                     id="firstName"
                     type="text"
                     placeholder="Enter your first name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
+                    className="h-12 text-gray-900 text-base border-2 border-gray-300 bg-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-md transition-colors"
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-sm font-medium text-gray-900">
+                    Last Name
+                  </Label>
                   <Input
                     id="lastName"
                     type="text"
                     placeholder="Enter your last name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
+                    className="h-12 text-gray-900 text-base border-2 border-gray-300 bg-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-md transition-colors"
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">Company Name</Label>
+                <Label htmlFor="companyName" className="text-sm font-medium text-gray-900">
+                  Company Name
+                </Label>
                 <Input
                   id="companyName"
                   type="text"
                   placeholder="Enter your company name"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
+                  className="h-12 text-gray-900 text-base border-2 border-gray-300 bg-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-md transition-colors"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-900">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 text-base border-2 border-gray-200 bg-white/80 focus:border-purple-500 transition-colors"
+                  className="h-12 text-gray-900 text-base border-2 border-gray-300 bg-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-md transition-colors"
                   required
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200" 
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-semibold btn-gradient shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={isLoading}
               >
                 {isLoading ? "Joining..." : "Join Waiting List"}
