@@ -42,6 +42,9 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState<string | null>(
+    null
+  );
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +56,18 @@ export default function Register() {
     }
 
     setIsLoading(true);
+    setRegistrationMessage(null);
 
     const result = await register({ full_name: name, email, password });
 
-    if (!result.success) {
+    if (result.success) {
+      if (result.requiresConfirmation) {
+        setRegistrationMessage(
+          "Please check your email and click the confirmation link to complete your registration."
+        );
+      }
+      // If user is returned, auth context will handle navigation
+    } else {
       alert(result.error || "Registration failed");
     }
 
@@ -149,6 +160,14 @@ export default function Register() {
               {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </form>
+
+          {registrationMessage && (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+              <p className="text-sm text-green-800 dark:text-green-200 text-center">
+                {registrationMessage}
+              </p>
+            </div>
+          )}
 
           <div className="text-center text-sm">
             Already have an account?{" "}

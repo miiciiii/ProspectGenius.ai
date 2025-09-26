@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useMemo,
 } from "react";
 import { SubscriptionService } from "@/services/subscriptionService";
 import { useAuth } from "@/context/auth-context";
@@ -32,7 +33,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated, refreshUser } = useAuth();
-  console.log("SubscriptionProvider - user:", user);
+  // console.log("SubscriptionProvider - user:", user);
 
   const refreshSubscription = async () => {
     if (!isAuthenticated || !user) {
@@ -45,8 +46,6 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
       const subscriptionData =
         await SubscriptionService.getCurrentSubscription();
       setSubscription(subscriptionData);
-      // Also refresh user data to get updated role
-      await refreshUser();
     } catch (error) {
       console.error("Error fetching subscription:", error);
       setSubscription(null);
@@ -57,14 +56,18 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
 
   useEffect(() => {
     refreshSubscription();
-  }, [user]);
+  }, [user?.id, user?.profile?.role, isAuthenticated]);
 
-  const currentPlan = subscription?.plan || null;
+  const currentPlan = useMemo(() => subscription?.plan || null, [subscription]);
 
-  const hasActiveSubscription = subscription?.status === "active";
+  const hasActiveSubscription = useMemo(
+    () => subscription?.status === "active",
+    [subscription]
+  );
 
-  const canAccessPremiumFeatures = (() => {
-    if (user?.role === "admin") return true; // Admins always have access
+  const canAccessPremiumFeatures = useMemo(() => {
+    console.log("Checking premium access for user:", user?.profile);
+    if (user?.profile?.role === "admin") return true; // Admins always have access
     if (!subscription) return false;
 
     // Check if subscription is active
@@ -78,7 +81,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
     }
 
     return true;
-  })();
+  }, [user?.profile?.role, subscription]);
 
   const value: SubscriptionContextType = {
     subscription,
