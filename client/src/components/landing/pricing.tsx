@@ -60,7 +60,6 @@ export default function Pricing() {
         <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-12">
           Select the perfect plan for your business needs. Upgrade or downgrade at any time.
         </p>
-        <p className="text-sm text-purple-400 mb-16">Current Plan: Professional</p>
 
         <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
           {plans.map((plan) => (
