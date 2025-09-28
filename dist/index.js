@@ -6,6 +6,7 @@ import express2 from "express";
 import { createServer } from "http";
 
 // server/supabaseClient.ts
+import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 var supabaseUrl = process.env.SUPABASE_URL;
 var supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -22,9 +23,7 @@ var SupabaseStorage = class {
     let query = supabase.from("funded_companies_production").select("*").order("funding_date", { ascending: false });
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== void 0) {
-          query = query.eq(key, value);
-        }
+        if (value !== void 0) query = query.eq(key, value);
       });
     }
     const { data, error } = await query;
@@ -33,18 +32,10 @@ var SupabaseStorage = class {
   }
   async getFilteredFundedCompanies(filters) {
     let query = supabase.from("funded_companies_production").select("*");
-    if (filters.search) {
-      query = query.ilike("company_name", `%${filters.search}%`);
-    }
-    if (filters.funding_stage) {
-      query = query.eq("funding_stage", filters.funding_stage);
-    }
-    if (filters.industry) {
-      query = query.eq("industry", filters.industry);
-    }
-    if (filters.status) {
-      query = query.eq("status", filters.status);
-    }
+    if (filters.search) query = query.ilike("company_name", `%${filters.search}%`);
+    if (filters.funding_stage) query = query.eq("funding_stage", filters.funding_stage);
+    if (filters.industry) query = query.eq("industry", filters.industry);
+    if (filters.status) query = query.eq("status", filters.status);
     const { data, error } = await query.order("funding_date", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -71,7 +62,7 @@ var SupabaseStorage = class {
     const oneWeekAgo = /* @__PURE__ */ new Date();
     oneWeekAgo.setDate(now.getDate() - 7);
     const thisWeekCompanies = companies.filter(
-      (c) => new Date(c.funding_date) >= oneWeekAgo
+      (c) => new Date(c.created_at) >= oneWeekAgo
     );
     const totalFunding = companies.reduce(
       (sum, c) => sum + (c.funding_amount ?? 0),
@@ -98,166 +89,127 @@ var SupabaseStorage = class {
     if (error) throw error;
     return data ?? [];
   }
+  async getCompanyReports() {
+    const { data, error } = await supabase.from("company_reports").select("*").not("company_name", "is", null).order("funding_date", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((r) => ({
+      ...r,
+      investors: Array.isArray(r.investors) ? r.investors : [],
+      markets: Array.isArray(r.markets) ? r.markets : []
+    }));
+  }
 };
 var storage = new SupabaseStorage();
 
 // server/routes.ts
+function normalizeFilters(filters) {
+  const normalized = { ...filters };
+  if (filters.funding_stage) {
+    const stageMap = {
+      "pre-seed": "Pre-Seed",
+      "seed": "Seed",
+      "series-a": "Series A",
+      "series-b": "Series B",
+      "series-c": "Series C"
+    };
+    normalized.funding_stage = stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
+  }
+  if (filters.status) {
+    const statusMap = {
+      "new": "new",
+      "contacted": "contacted",
+      "follow-up": "follow-up"
+    };
+    normalized.status = statusMap[filters.status.toLowerCase()] || filters.status;
+  }
+  return normalized;
+}
 async function registerRoutes(app2) {
   app2.get("/api/companies", async (req, res) => {
     try {
-      const filters = req.query;
-      const normalizedFilters = { ...filters };
-      if (filters.funding_stage) {
-        const stageMap = {
-          "pre-seed": "Pre-Seed",
-          "seed": "Seed",
-          "series-a": "Series A",
-          "series-b": "Series B",
-          "series-c": "Series C"
-        };
-        normalizedFilters.funding_stage = stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
-      }
-      if (filters.status) {
-        const statusMap = {
-          "new": "new",
-          "contacted": "contacted",
-          "follow-up": "follow-up"
-        };
-        normalizedFilters.status = statusMap[filters.status.toLowerCase()] || filters.status;
-      }
-      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
+      const filters = normalizeFilters(req.query);
+      const companies = await storage.getFilteredFundedCompanies(filters);
       res.json(companies);
     } catch (error) {
-      res.status(400).json({
-        message: "Invalid filter parameters",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(400).json({ message: "Invalid filter parameters", error: error.message });
     }
   });
   app2.get("/api/companies/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      const company = await storage.getFundedCompany(id);
-      if (!company) {
-        return res.status(404).json({ message: "Company not found" });
-      }
+      const company = await storage.getFundedCompany(req.params.id);
+      if (!company) return res.status(404).json({ message: "Company not found" });
       res.json(company);
     } catch (error) {
-      res.status(500).json({
-        message: "Failed to fetch company",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ message: "Failed to fetch company", error: error.message });
     }
   });
   app2.post("/api/companies", async (req, res) => {
     try {
       const companyData = req.body;
-      const payload = { ...companyData, social_media: companyData.social_media ?? [] };
-      const company = await storage.createFundedCompany(payload);
+      const company = await storage.createFundedCompany({
+        ...companyData,
+        social_media: companyData.social_media ?? []
+      });
       res.status(201).json(company);
     } catch (error) {
-      res.status(400).json({
-        message: "Invalid company data",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(400).json({ message: "Invalid company data", error: error.message });
     }
   });
   app2.patch("/api/companies/:id", async (req, res) => {
     try {
-      const { id } = req.params;
       const updates = req.body;
-      if (updates.social_media && !Array.isArray(updates.social_media)) {
-        updates.social_media = [];
-      }
-      const company = await storage.updateFundedCompany(id, updates);
+      if (updates.social_media && !Array.isArray(updates.social_media)) updates.social_media = [];
+      const company = await storage.updateFundedCompany(req.params.id, updates);
       res.json(company);
     } catch (error) {
-      if (error instanceof Error && error.message.includes("not found")) {
+      if (error.message.includes("not found")) {
         return res.status(404).json({ message: error.message });
       }
-      res.status(400).json({
-        message: "Failed to update company",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(400).json({ message: "Failed to update company", error: error.message });
     }
   });
   app2.delete("/api/companies/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      await storage.deleteFundedCompany(id);
+      await storage.deleteFundedCompany(req.params.id);
       res.status(204).send();
     } catch (error) {
-      if (error instanceof Error && error.message.includes("not found")) {
-        return res.status(404).json({ message: error.message });
-      }
-      res.status(500).json({
-        message: "Failed to delete company",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      if (error.message.includes("not found")) return res.status(404).json({ message: error.message });
+      res.status(500).json({ message: "Failed to delete company", error: error.message });
     }
   });
   app2.post("/api/companies/bulk", async (req, res) => {
     try {
       const { companies } = req.body;
-      if (!Array.isArray(companies)) {
-        return res.status(400).json({ message: "Expected array of companies" });
-      }
-      const payload = companies.map((c) => ({
+      if (!Array.isArray(companies)) return res.status(400).json({ message: "Expected array of companies" });
+      const created = await storage.bulkCreateFundedCompanies(companies.map((c) => ({
         ...c,
         social_media: c.social_media ?? []
-      }));
-      const createdCompanies = await storage.bulkCreateFundedCompanies(payload);
-      res.status(201).json(createdCompanies);
+      })));
+      res.status(201).json(created);
     } catch (error) {
-      res.status(400).json({
-        message: "Invalid company data in bulk create",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(400).json({ message: "Invalid company data in bulk create", error: error.message });
     }
   });
-  app2.get("/api/dashboard/stats", async (req, res) => {
+  app2.get("/api/dashboard/stats", async (_req, res) => {
     try {
       const stats = await storage.getDashboardStats();
       res.json(stats);
     } catch (error) {
-      res.status(500).json({
-        message: "Failed to fetch dashboard stats",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ message: "Failed to fetch dashboard stats", error: error.message });
     }
   });
   app2.get("/api/companies/export", async (req, res) => {
     try {
-      const filters = req.query;
-      const normalizedFilters = { ...filters };
-      if (filters.funding_stage) {
-        const stageMap = {
-          "pre-seed": "Pre-Seed",
-          "seed": "Seed",
-          "series-a": "Series A",
-          "series-b": "Series B",
-          "series-c": "Series C"
-        };
-        normalizedFilters.funding_stage = stageMap[filters.funding_stage.toLowerCase()] || filters.funding_stage;
-      }
-      if (filters.status) {
-        const statusMap = {
-          "new": "new",
-          "contacted": "contacted",
-          "follow-up": "follow-up"
-        };
-        normalizedFilters.status = statusMap[filters.status.toLowerCase()] || filters.status;
-      }
-      const companies = await storage.getFilteredFundedCompanies(normalizedFilters);
+      const filters = normalizeFilters(req.query);
+      const companies = await storage.getFilteredFundedCompanies(filters);
       const csvData = companies.map((company) => ({
         "Company Name": company.company_name,
         "Domain": company.domain || "",
         "Funding Date": company.funding_date,
         "Funding Stage": company.funding_stage,
         "Funding Amount": company.funding_amount || "",
-        "Investors": company.investors || "",
-        "Contact Name": company.contact_name || "",
-        "Contact Email": company.contact_email || "",
+        "Investors": Array.isArray(company.investors) ? company.investors.join(", ") : "",
+        "Contacts": (company.contacts ?? []).map((c) => `${c.name} <${c.email}>`).join("; "),
         "Social Media": (company.social_media ?? []).join(", "),
         "Industry": company.industry || "",
         "Status": company.status,
@@ -265,10 +217,15 @@ async function registerRoutes(app2) {
       }));
       res.json({ data: csvData });
     } catch (error) {
-      res.status(500).json({
-        message: "Failed to export companies",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ message: "Failed to export companies", error: error.message });
+    }
+  });
+  app2.get("/api/company-reports", async (_req, res) => {
+    try {
+      const reports = await storage.getCompanyReports();
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch company reports", error: error.message });
     }
   });
   const httpServer = createServer(app2);

@@ -20,7 +20,7 @@ import ResetPassword from "@/pages/auth/reset-password";
 
 // Dashboard pages
 import Dashboard from "@/pages/dashboard";
-import Companies from "@/pages/companies";
+import Companies from "@/pages/reports/company-reports";
 import Analytics from "@/pages/analytics";
 import Sources from "@/pages/sources";
 import Settings from "@/pages/administration/settings";
@@ -35,6 +35,7 @@ import NotFound from "@/pages/not-found";
 
 // Landing page
 import LandingPage from "@/pages/landing/landing";
+import WaitingList from "@/pages/waiting-list";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
 
               {/* Public landing page */}
               <Route path="/" element={<LandingPage />} />
+              <Route path="/waiting-list" element={<WaitingList />} />
 
               {/* Protected dashboard routes */}
               <Route

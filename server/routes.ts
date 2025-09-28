@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (filters.funding_stage) {
         const stageMap: Record<string, string> = {
           "pre-seed": "Pre-Seed",
-          seed: "Seed",
+          "seed": "Seed",
           "series-a": "Series A",
           "series-b": "Series B",
           "series-c": "Series C",
@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const limitedCompanies = companies.slice(0, 10).map((company) => ({
           ...company,
           contact_email: null, // Hide email for guests
-          contact_name: company.contact_name
+          contact_name: company.contacts
             ? "Available to subscribers"
             : null,
           social_media: [], // Hide social media for guests
@@ -79,10 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ data: companies });
     } catch (error) {
-      res.status(400).json({
-        message: "Invalid filter parameters",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      res.status(400).json({ message: "Invalid filter parameters", error: (error as Error).message });
     }
   });
 
@@ -107,10 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(company);
     } catch (error) {
-      res.status(500).json({
-        message: "Failed to fetch company",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      res.status(500).json({ message: "Failed to fetch company", error: (error as Error).message });
     }
   });
 
@@ -261,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (filters.funding_stage) {
           const stageMap: Record<string, string> = {
             "pre-seed": "Pre-Seed",
-            seed: "Seed",
+            "seed": "Seed",
             "series-a": "Series A",
             "series-b": "Series B",
             "series-c": "Series C",
@@ -285,30 +279,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           normalizedFilters
         );
 
-        const csvData = companies.map((company) => ({
-          "Company Name": company.company_name,
-          Domain: company.domain || "",
-          "Funding Date": company.funding_date,
-          "Funding Stage": company.funding_stage,
-          "Funding Amount": company.funding_amount || "",
-          Investors: company.investors || "",
-          "Contact Name": company.contact_name || "",
-          "Contact Email": company.contact_email || "",
-          "Social Media": (company.social_media ?? []).join(", "),
-          Industry: company.industry || "",
-          Status: company.status,
-          Source: company.source || "",
-        }));
+      const csvData = companies.map(company => ({
+        "Company Name": company.company_name,
+        "Domain": company.domain || "",
+        "Funding Date": company.funding_date,
+        "Funding Stage": company.funding_stage,
+        "Funding Amount": company.funding_amount || "",
+        "Investors": Array.isArray(company.investors) ? company.investors.join(", ") : "",
+        "Contacts": (company.contacts ?? []).map(c => `${c.name} <${c.email}>`).join("; "),
+        "Social Media": (company.social_media ?? []).join(", "),
+        "Industry": company.industry || "",
+        "Status": company.status,
+        "Source": company.source || "",
+      }));
 
-        res.json({ data: csvData });
-      } catch (error) {
-        res.status(500).json({
-          message: "Failed to export companies",
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
+      res.json({ data: csvData });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to export companies", error: (error as Error).message });
     }
-  );
+  });
+
+  /** -----------------------------
+   * Company Reports
+   * ----------------------------- */
+  app.get("/api/company-reports", async (_req, res) => {
+    try {
+      const reports = await storage.getCompanyReports();
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch company reports", error: (error as Error).message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

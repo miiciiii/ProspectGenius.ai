@@ -5,6 +5,7 @@ import type {
   FundedCompany,
   InsertFundedCompany,
   CompanyFilters,
+  Contact,
 } from "@shared/schema";
 
 /** -----------------------------
@@ -17,15 +18,15 @@ function normalizeFilters(
 
   const fundingStageMap: Record<string, string> = {
     "pre-seed": "Pre-Seed",
-    seed: "Seed",
+    "seed": "Seed",
     "series-a": "Series A",
     "series-b": "Series B",
     "series-c": "Series C",
   };
 
   const statusMap: Record<string, string> = {
-    new: "new",
-    contacted: "contacted",
+    "new": "new",
+    "contacted": "contacted",
     "follow-up": "follow-up",
   };
 
@@ -50,9 +51,16 @@ export function useCompanies(filters?: CompanyFilters) {
   return useQuery({
     queryKey: ["/api/companies", normalizedFilters],
     queryFn: async () => {
-      const result = await Api.getCompanies(normalizedFilters);
-      // Api.getCompanies returns { data: FundedCompany[] }, so we extract the data
-      return result.data || [];
+      const response = await Api.getCompanies(normalizedFilters);
+      const companies = response.data ?? [];
+
+      // Normalize arrays and contacts for frontend
+      return companies.map((c: FundedCompany) => ({
+        ...c,
+        investors: c.investors ?? [],
+        social_media: c.social_media ?? [],
+        contacts: Array.isArray(c.contacts) ? c.contacts : [],
+      }));
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -61,7 +69,17 @@ export function useCompanies(filters?: CompanyFilters) {
 export function useCompany(id: string) {
   return useQuery({
     queryKey: ["/api/companies", id],
-    queryFn: () => (id ? Api.getCompany(id) : null),
+    queryFn: async () => {
+      if (!id) return null;
+      const company = await Api.getCompany(id);
+      if (!company) return null;
+      return {
+        ...company,
+        investors: company.investors ?? [],
+        social_media: company.social_media ?? [],
+        contacts: Array.isArray(company.contacts) ? company.contacts : [],
+      } as FundedCompany;
+    },
     enabled: !!id,
   });
 }

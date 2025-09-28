@@ -1,4 +1,5 @@
 import { CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 const features = [
   { title: "Team Management", desc: "Easily manage team roles and access." },
@@ -6,22 +7,61 @@ const features = [
   { title: "Secure Platform", desc: "Enterprise-grade security and reliability." },
 ];
 
+const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
+const item = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
 export default function Features() {
   return (
-    <section className="py-20 bg-muted/50">
-      <div className="max-w-5xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold text-foreground">
-          Why Choose Us?
-        </h2>
-        <div className="mt-10 grid gap-10 sm:grid-cols-2 md:grid-cols-3">
-          {features.map((f) => (
-            <div key={f.title} className="flex flex-col items-center text-center">
-              <CheckCircle className="h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold">{f.title}</h3>
-              <p className="mt-2 text-muted-foreground">{f.desc}</p>
-            </div>
-          ))}
+    <section
+      id="features"
+      role="region"
+      aria-labelledby="features-title"
+      className="relative w-full min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-gray-900 via-indigo-900 to-black"
+    >
+      {/* Overlay for depth */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center">
+        <div className="text-center mb-12">
+          <h2
+            id="features-title"
+            className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6"
+          >
+            Why Choose Us?
+          </h2>
         </div>
+
+        <motion.div
+          className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+          variants={container}
+        >
+          {features.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={item}
+              className="group relative bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-1"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="relative inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/40 mb-4 sm:mb-6 group-hover:scale-105 transition-transform duration-300">
+                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-400" />
+              </div>
+
+              <h3 className="text-lg sm:text-xl font-medium text-white mb-2 sm:mb-3 group-hover:text-indigo-300 transition-colors duration-200">
+                {feature.title}
+              </h3>
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+                {feature.desc}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
