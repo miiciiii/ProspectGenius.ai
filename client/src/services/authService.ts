@@ -65,7 +65,7 @@ export const authService = {
     userData: RegisterData
   ): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
-      // Sign up with Supabase Auth
+      // Sign up with Supabase Auth - require email confirmation
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -73,6 +73,7 @@ export const authService = {
           data: {
             full_name: userData.full_name,
           },
+          emailRedirectTo: `${window.location.origin}/auth/login`,
         },
       });
 
@@ -82,6 +83,16 @@ export const authService = {
 
       if (!data.user) {
         return { success: false, error: "Registration failed" };
+      }
+
+      // Check if email confirmation is required
+      if (!data.user.email_confirmed_at) {
+        return {
+          success: true,
+          user: undefined,
+          error:
+            "Please check your email and click the confirmation link to complete registration.",
+        };
       }
 
       // Sync profile with backend
@@ -144,6 +155,15 @@ export const authService = {
         return { success: false, error: "Login failed" };
       }
 
+      // Check if email is confirmed
+      if (!data.user.email_confirmed_at) {
+        console.log("loginUser: Email not confirmed");
+        return {
+          success: false,
+          error: "Please confirm your email address before logging in.",
+        };
+      }
+
       console.log("loginUser: Supabase auth successful, fetching profile");
 
       // Fetch the user profile to get the correct role
@@ -193,7 +213,7 @@ export const authService = {
         id: data.user.id,
         email: data.user.email!,
         full_name:
-          data.user.user_metadata?.full_name || profile?.full_name || "",
+          profile?.full_name || data.user.user_metadata?.full_name || "",
         role: profile?.role || "guest", // Use role from profiles table, not from auth.user
         profile: profile || undefined,
       };
@@ -220,6 +240,7 @@ export const authService = {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      console.log("getCurrentUser: Supabase user:", user);
 
       if (!user) return null;
 
@@ -237,7 +258,7 @@ export const authService = {
       return {
         id: user.id,
         email: user.email!,
-        full_name: user.user_metadata?.full_name || profile?.full_name || "",
+        full_name: profile?.full_name || user.user_metadata?.full_name || "",
         role: profile?.role || "guest", // Default to guest if no profile
         profile: profile || undefined,
       };
@@ -402,7 +423,7 @@ export const authService = {
           id: session.user.id,
           email: session.user.email!,
           full_name:
-            session.user.user_metadata?.full_name || profile?.full_name || "",
+            profile?.full_name || session.user.user_metadata?.full_name || "",
           role: profile?.role || "guest",
           profile: profile || undefined,
         };
