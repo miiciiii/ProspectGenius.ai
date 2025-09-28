@@ -23,18 +23,18 @@ export default function LandingLayout({ children }: LandingLayoutProps) {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full bg-gradient-to-b from-gray-900 via-gray-800 to-black text-white">
       {/* Sticky Navbar */}
       <div ref={headerRef} className="sticky top-0 z-50">
         <LandingNavbar />
       </div>
 
-      {/* Main content grows naturally */}
-      <main className="flex-1 flex flex-col">
+      {/* Main content */}
+      <main className="flex-1 flex flex-col w-full">
         {children}
       </main>
 
-      {/* Footer sticks at bottom */}
+      {/* Footer */}
       <Footer variant="landing" slim />
     </div>
   );
