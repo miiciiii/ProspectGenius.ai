@@ -8,24 +8,29 @@ const features = [
 ];
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
-const item = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } };
+const item = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
 
 export default function Features() {
   return (
-    <div
+    <section
       id="features"
       role="region"
       aria-labelledby="features-title"
-      className="relative w-full overflow-hidden py-24"
+      className="relative w-full min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-gray-900 via-indigo-900 to-black"
     >
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-50 via-orange-50/30 to-white" />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-50/20 to-transparent" />
-      </div>
+      {/* Overlay for depth */}
+      <div className="absolute inset-0 bg-black/40" />
 
+      {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center">
         <div className="text-center mb-12">
-          <h2 id="features-title" className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-6">
+          <h2
+            id="features-title"
+            className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-6"
+          >
             Why Choose Us?
           </h2>
         </div>
@@ -41,24 +46,23 @@ export default function Features() {
             <motion.div
               key={feature.title}
               variants={item}
-              className="group relative bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1"
-              style={{ willChange: "transform, opacity" }}
+              className="group relative bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 border border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-1"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-400/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-              <div className="relative inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-purple-100 to-orange-100 border border-purple-200 mb-4 sm:mb-6 group-hover:scale-105 transition-transform duration-300">
-                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" />
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="relative inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/40 mb-4 sm:mb-6 group-hover:scale-105 transition-transform duration-300">
+                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 text-indigo-400" />
               </div>
 
-              <h3 className="text-lg sm:text-xl font-medium text-gray-800 mb-2 sm:mb-3 group-hover:text-purple-600 transition-colors duration-200">
+              <h3 className="text-lg sm:text-xl font-medium text-white mb-2 sm:mb-3 group-hover:text-indigo-300 transition-colors duration-200">
                 {feature.title}
               </h3>
-              <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
                 {feature.desc}
               </p>
             </motion.div>
           ))}
         </motion.div>
       </div>
-    </div>
+    </section>
   );
 }
