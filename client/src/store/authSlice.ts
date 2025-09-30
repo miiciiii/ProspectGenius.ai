@@ -39,7 +39,15 @@ const authSlice = createSlice({
     ) {
       state.isAuthenticated = true;
       state.userProfile = action.payload.userProfile;
-      state.subscription = action.payload.subscription ?? null;
+      // Only overwrite subscription if caller provided it explicitly.
+      // This avoids clearing an existing subscription when loginSuccess
+      // is re-dispatched during rehydration or auth-state events without
+      // subscription data.
+      if (
+        Object.prototype.hasOwnProperty.call(action.payload, "subscription")
+      ) {
+        state.subscription = action.payload.subscription ?? null;
+      }
     },
     logout(state) {
       state.isAuthenticated = false;

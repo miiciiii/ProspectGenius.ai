@@ -97,14 +97,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               lastDispatchedUserId = sbUser.id;
               console.log(
                 "AuthProvider: Reusing stored Redux profile for user",
-                sbUser.id
+                sbUser.id,
+                { storedProfile: user }
               );
-              dispatch(
-                loginSuccessAction({
-                  userProfile: user as any,
-                  subscription: (user as any)?.subscription ?? null,
-                })
-              );
+              {
+                const payload: any = { userProfile: user as any };
+                if (typeof (user as any)?.subscription !== "undefined") {
+                  payload.subscription = (user as any).subscription;
+                }
+                console.log(
+                  "AuthProvider: dispatching loginSuccess with payload:",
+                  payload
+                );
+                dispatch(loginSuccessAction(payload));
+              }
             }
           } else {
             // Fetch profile once and store it
@@ -126,12 +132,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } as User;
             if (sbUser.id !== lastDispatchedUserId) {
               lastDispatchedUserId = sbUser.id;
-              dispatch(
-                loginSuccessAction({
+              {
+                const payload: any = {
                   userProfile: normalizeUser(composed) as any,
-                  subscription: (composed as any)?.subscription ?? null,
-                })
-              );
+                };
+                if (typeof (composed as any)?.subscription !== "undefined") {
+                  payload.subscription = (composed as any).subscription;
+                }
+                console.log(
+                  "AuthProvider: dispatching loginSuccess with payload:",
+                  payload
+                );
+                dispatch(loginSuccessAction(payload));
+              }
             }
           }
         }
@@ -163,12 +176,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 "AuthProvider: onAuthStateChange - reusing stored profile for",
                 user.id
               );
-              dispatch(
-                loginSuccessAction({
+              {
+                const payload: any = {
                   userProfile: normalizeUser(user as any) as any,
-                  subscription: (user as any)?.subscription ?? null,
-                })
-              );
+                };
+                if (typeof (user as any)?.subscription !== "undefined") {
+                  payload.subscription = (user as any).subscription;
+                }
+                console.log(
+                  "AuthProvider: dispatching loginSuccess with payload:",
+                  payload
+                );
+                dispatch(loginSuccessAction(payload));
+              }
             } else if (user) {
               // attempt to reuse stored profile in Redux if present
               if (
@@ -196,21 +216,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                       role: profile?.role || "guest",
                       profile: profile || undefined,
                     } as User;
-                    dispatch(
-                      loginSuccessAction({
+                    {
+                      const payload: any = {
                         userProfile: normalizeUser(composed) as any,
-                        subscription: (composed as any)?.subscription ?? null,
-                      })
-                    );
+                      };
+                      if (
+                        typeof (composed as any)?.subscription !== "undefined"
+                      ) {
+                        payload.subscription = (composed as any).subscription;
+                      }
+                      console.log(
+                        "AuthProvider: dispatching loginSuccess with payload:",
+                        payload
+                      );
+                      dispatch(loginSuccessAction(payload));
+                    }
                   })
                   .catch(() => {
                     // if profile fetch fails, still dispatch minimal user
-                    dispatch(
-                      loginSuccessAction({
+                    {
+                      const payload: any = {
                         userProfile: normalizeUser(user as any) as any,
-                        subscription: (user as any)?.subscription ?? null,
-                      })
-                    );
+                      };
+                      if (typeof (user as any)?.subscription !== "undefined") {
+                        payload.subscription = (user as any).subscription;
+                      }
+                      console.log(
+                        "AuthProvider: dispatching loginSuccess with payload:",
+                        payload
+                      );
+                      dispatch(loginSuccessAction(payload));
+                    }
                   });
               } else {
                 dispatch(
@@ -247,12 +283,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const currentUser = await authService.getCurrentUser();
       if (currentUser) {
-        dispatch(
-          loginSuccessAction({
-            userProfile: currentUser as any,
-            subscription: (currentUser as any)?.subscription ?? null,
-          })
-        );
+        {
+          const payload: any = { userProfile: currentUser as any };
+          if (typeof (currentUser as any)?.subscription !== "undefined") {
+            payload.subscription = (currentUser as any).subscription;
+          }
+          console.log(
+            "AuthProvider: dispatching loginSuccess with payload:",
+            payload
+          );
+          dispatch(loginSuccessAction(payload));
+        }
       } else {
         dispatch(logoutAction());
       }
@@ -294,12 +335,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success) {
         if (result.user) {
           // User is confirmed and can proceed
-          dispatch(
-            loginSuccessAction({
-              userProfile: result.user as any,
-              subscription: (result.user as any)?.subscription ?? null,
-            })
-          );
+          {
+            const payload: any = { userProfile: result.user as any };
+            if (typeof (result.user as any)?.subscription !== "undefined") {
+              payload.subscription = (result.user as any).subscription;
+            }
+            console.log(
+              "AuthProvider: dispatching loginSuccess with payload:",
+              payload
+            );
+            dispatch(loginSuccessAction(payload));
+          }
           navigate("/dashboard");
         } else {
           // User needs email confirmation

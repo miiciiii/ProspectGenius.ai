@@ -60,15 +60,34 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({
       return;
     }
 
+    const previous = subscription;
     try {
       setIsLoading(true);
       const subscriptionData =
         await SubscriptionService.getCurrentSubscription();
+      console.log(
+        "SubscriptionProvider: fetched subscription",
+        subscriptionData
+      );
       dispatch(updateSubscriptionAction(subscriptionData as any));
       lastFetchedAtRef.current = Date.now();
     } catch (error) {
       console.error("Error fetching subscription:", error);
-      dispatch(updateSubscriptionAction(null as any));
+      // Don't immediately clear the user's subscription on transient errors.
+      // Keep the previous subscription for a short grace window and retry
+      // on the next refresh.
+      if (previous) {
+        console.log(
+          "SubscriptionProvider: keeping previous subscription due to fetch error (grace period)",
+          previous
+        );
+        // keep previous in Redux (no dispatch to clear)
+      } else {
+        console.log(
+          "SubscriptionProvider: no previous subscription, clearing state"
+        );
+        dispatch(updateSubscriptionAction(null as any));
+      }
     } finally {
       setIsLoading(false);
       inFlightRef.current = false;
