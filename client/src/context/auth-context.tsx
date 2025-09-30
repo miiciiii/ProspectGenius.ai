@@ -12,7 +12,15 @@ import {
   LoginCredentials,
   RegisterData,
 } from "@/services/authService";
+import { supabase } from "@/lib/supabaseClient";
 import type { Profile } from "@shared/schema";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { persistor } from "@/store";
+import {
+  loginSuccess as loginSuccessAction,
+  logout as logoutAction,
+  updateProfile as updateProfileAction,
+} from "@/store/authSlice";
 
 interface AuthContextType {
   user: User | null;
@@ -48,26 +56,89 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper to normalize user objects before storing to Redux
+const normalizeUser = (raw: any): User => {
+  if (!raw) return raw;
+  const profile = raw.profile || (raw as any)?.profile?.profile || null;
+  const role = raw.role || (profile && profile.role) || "guest";
+  const id = raw.id || (profile && profile.id) || null;
+  return {
+    id,
+    email: raw.email || (profile && profile.email) || "",
+    full_name: raw.full_name || (profile && profile.full_name) || "",
+    role,
+    profile: profile || undefined,
+  } as User;
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const user = useAppSelector((s) => s.auth.userProfile) as User | null;
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   // Initialize user and set up auth state listener
   useEffect(() => {
     let mounted = true;
+    let lastDispatchedUserId: string | null = null;
 
     const initializeAuth = async () => {
       try {
-        const currentUser = await authService.getCurrentUser();
-        console.log("getCurrentUser:", currentUser);
-        if (mounted) {
-          setUser(currentUser);
+        // Use Supabase to get session user without fetching backend profile
+        const {
+          data: { user: sbUser },
+        } = await supabase.auth.getUser();
+        console.log("AuthProvider: Supabase user on init:", sbUser);
+        if (mounted && sbUser) {
+          // If we already have a stored profile in Redux and it matches, reuse it
+          if (user && (user as any).id === sbUser.id) {
+            if (sbUser.id !== lastDispatchedUserId) {
+              lastDispatchedUserId = sbUser.id;
+              console.log(
+                "AuthProvider: Reusing stored Redux profile for user",
+                sbUser.id
+              );
+              dispatch(
+                loginSuccessAction({
+                  userProfile: user as any,
+                  subscription: (user as any)?.subscription ?? null,
+                })
+              );
+            }
+          } else {
+            // Fetch profile once and store it
+            console.log(
+              "AuthProvider: No stored profile found for user",
+              sbUser.id,
+              "— fetching from backend once"
+            );
+            const profile = await authService.getCurrentUserProfile();
+            const composed = {
+              id: profile?.id || sbUser.id,
+              email: sbUser.email || "",
+              full_name:
+                profile?.full_name ||
+                (sbUser as any)?.user_metadata?.full_name ||
+                "",
+              role: profile?.role || "guest",
+              profile: profile || undefined,
+            } as User;
+            if (sbUser.id !== lastDispatchedUserId) {
+              lastDispatchedUserId = sbUser.id;
+              dispatch(
+                loginSuccessAction({
+                  userProfile: normalizeUser(composed) as any,
+                  subscription: (composed as any)?.subscription ?? null,
+                })
+              );
+            }
+          }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
         if (mounted) {
-          setUser(null);
+          dispatch(logoutAction());
         }
       } finally {
         if (mounted) {
@@ -83,7 +154,80 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       data: { subscription },
     } = authService.onAuthStateChange((user) => {
       if (mounted) {
-        setUser(user);
+        if (user) {
+          // If we already have the profile stored, reuse it; otherwise fetch once
+          if (user.id !== lastDispatchedUserId) {
+            lastDispatchedUserId = user.id;
+            if (user && (user as any).profile) {
+              console.log(
+                "AuthProvider: onAuthStateChange - reusing stored profile for",
+                user.id
+              );
+              dispatch(
+                loginSuccessAction({
+                  userProfile: normalizeUser(user as any) as any,
+                  subscription: (user as any)?.subscription ?? null,
+                })
+              );
+            } else if (user) {
+              // attempt to reuse stored profile in Redux if present
+              if (
+                user &&
+                (user as any).id &&
+                (user as any).id === (user as any).id &&
+                typeof (user as any).profile === "undefined" &&
+                (user as any)
+              ) {
+                // fallback: fetch profile once
+                console.log(
+                  "AuthProvider: onAuthStateChange - fetching profile once for",
+                  user.id
+                );
+                authService
+                  .getCurrentUserProfile()
+                  .then((profile) => {
+                    const composed = {
+                      id: profile?.id || user.id,
+                      email: user.email || "",
+                      full_name:
+                        profile?.full_name ||
+                        (user as any)?.user_metadata?.full_name ||
+                        "",
+                      role: profile?.role || "guest",
+                      profile: profile || undefined,
+                    } as User;
+                    dispatch(
+                      loginSuccessAction({
+                        userProfile: normalizeUser(composed) as any,
+                        subscription: (composed as any)?.subscription ?? null,
+                      })
+                    );
+                  })
+                  .catch(() => {
+                    // if profile fetch fails, still dispatch minimal user
+                    dispatch(
+                      loginSuccessAction({
+                        userProfile: normalizeUser(user as any) as any,
+                        subscription: (user as any)?.subscription ?? null,
+                      })
+                    );
+                  });
+              } else {
+                dispatch(
+                  loginSuccessAction({
+                    userProfile: normalizeUser(user as any) as any,
+                    subscription: (user as any)?.subscription ?? null,
+                  })
+                );
+              }
+            }
+          }
+        } else {
+          if (lastDispatchedUserId !== null) {
+            lastDispatchedUserId = null;
+            dispatch(logoutAction());
+          }
+        }
         if (!user && window.location.pathname.startsWith("/dashboard")) {
           navigate("/auth/login");
         }
@@ -102,10 +246,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshUser = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      if (currentUser) {
+        dispatch(
+          loginSuccessAction({
+            userProfile: currentUser as any,
+            subscription: (currentUser as any)?.subscription ?? null,
+          })
+        );
+      } else {
+        dispatch(logoutAction());
+      }
     } catch (error) {
       console.error("Error refreshing user:", error);
-      setUser(null);
+      dispatch(logoutAction());
     }
   };
 
@@ -141,7 +294,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success) {
         if (result.user) {
           // User is confirmed and can proceed
-          setUser(result.user);
+          dispatch(
+            loginSuccessAction({
+              userProfile: result.user as any,
+              subscription: (result.user as any)?.subscription ?? null,
+            })
+          );
           navigate("/dashboard");
         } else {
           // User needs email confirmation
@@ -161,10 +319,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await authService.logoutUser();
-      setUser(null);
-      // navigate("/auth/login");
-      navigate("/"); // Redirect to landing page after logout
+      // First purge persisted store to remove stored profile immediately
+      try {
+        await persistor.purge();
+      } catch (e) {
+        console.warn("Failed to purge persisted store on logout", e);
+      }
+
+      // Clear any in-memory caches in the authService
+      try {
+        // authService.logoutUser will also clear caches; call it after purge
+        await authService.logoutUser();
+      } catch (e) {
+        console.warn("Error during authService.logoutUser():", e);
+      }
+
+      // Update Redux state to logged out
+      dispatch(logoutAction());
+
+      // Redirect to landing page after logout
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -177,6 +351,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await authService.updateProfile(updates);
       if (result.success) {
         // Refresh user data
+        // update Redux profile with the updates
+        dispatch(updateProfileAction(updates as any));
         await refreshUser();
       }
       return result;
@@ -191,7 +367,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success) {
         // Update current user if they updated their own role
         if (user && user.id === userId) {
-          setUser({ ...user, role: newRole });
+          // merge role into the stored profile
+          dispatch(
+            updateProfileAction({
+              ...((user as any) || {}),
+              role: newRole,
+            } as any)
+          );
         }
       }
       return result;
@@ -209,7 +391,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const value: AuthContextType = {
-    user,
+    user: user as User | null,
     isLoading,
     login,
     register,
@@ -240,11 +422,15 @@ export const useHasRole = (
 
   if (!user) return false;
 
+  // Resolve role: prefer top-level user.role, fallback to profile.role
+  const effectiveRole: User["role"] = (user.role ||
+    (user as any)?.profile?.role) as User["role"];
+
   if (Array.isArray(requiredRole)) {
-    return requiredRole.includes(user.role);
+    return requiredRole.includes(effectiveRole);
   }
 
-  return user.role === requiredRole;
+  return effectiveRole === requiredRole;
 };
 
 // Hook to check if user is admin
