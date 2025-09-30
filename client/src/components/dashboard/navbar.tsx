@@ -6,8 +6,11 @@ import {
   User,
   Settings,
   Crown,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +23,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-export function Navbar() {
+interface NavbarProps {
+  onMobileSidebarToggle?: () => void;
+}
+
+export function Navbar({ onMobileSidebarToggle }: NavbarProps) {
   const location = useLocation();
   const { user, logout, isAuthenticated } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -107,6 +115,21 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+                onMobileSidebarToggle?.();
+              }}
+              className="lg:hidden p-2 rounded-md hover:bg-secondary transition-colors"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5 text-foreground" />
+              ) : (
+                <Menu className="w-5 h-5 text-foreground" />
+              )}
+            </button>
+
             {/* Brand */}
             <a href="/" className="flex items-center gap-2 group">
               <img

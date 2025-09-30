@@ -30,8 +30,8 @@ const LandingNavbar = () => {
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-white/70 dark:bg-neutral-900/70 backdrop-blur-md shadow-sm"
-          : "bg-transparent"
+          ? "bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md shadow-md"
+          : "bg-black/30 backdrop-blur-sm"
       }`}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -44,14 +44,14 @@ const LandingNavbar = () => {
             loading="eager"
             decoding="async"
           />
-          <div className="hidden sm:block">
-            <span className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              ProspectGenius
-            </span>
-            <span className="text-xs text-gray-700 dark:text-gray-300 ml-1">
-              .ai
-            </span>
-          </div>
+            <div className="hidden sm:block">
+              <span className={`text-lg font-bold ${scrolled ? 'text-gray-900 dark:text-white' : 'text-white drop-shadow-2xl font-extrabold'}`}>
+                ProspectGenius
+              </span>
+              <span className={`text-xs ml-1 ${scrolled ? 'text-gray-600 dark:text-gray-300' : 'text-white drop-shadow-2xl font-semibold'}`}>
+                .ai
+              </span>
+            </div>
         </Link>
 
         {/* Desktop Nav */}
@@ -60,7 +60,11 @@ const LandingNavbar = () => {
             <button
               key={section}
               onClick={() => scrollToSection(section)}
-              className="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-purple-600 transition-colors duration-200 relative group"
+              className={`text-sm font-medium transition-colors duration-200 relative group ${
+                scrolled 
+                  ? 'text-gray-800 dark:text-gray-200 hover:text-purple-600' 
+                  : 'text-white drop-shadow-2xl font-semibold hover:text-purple-300'
+              }`}
             >
               {section.charAt(0).toUpperCase() + section.slice(1)}
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-purple-600 transition-all duration-200 group-hover:w-full"></span>
@@ -68,7 +72,11 @@ const LandingNavbar = () => {
           ))}
           <Link
             to="/waiting-list"
-            className="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-purple-600 transition-colors duration-200 relative group"
+            className={`text-sm font-medium transition-colors duration-200 relative group ${
+              scrolled 
+                ? 'text-gray-800 dark:text-gray-200 hover:text-purple-600' 
+                : 'text-white drop-shadow-2xl font-semibold hover:text-purple-300'
+            }`}
           >
             Waiting List
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-purple-600 transition-all duration-200 group-hover:w-full"></span>
@@ -81,7 +89,11 @@ const LandingNavbar = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600"
+              className={`text-sm font-medium transition-colors ${
+                scrolled 
+                  ? 'text-gray-700 dark:text-gray-200 hover:text-purple-600' 
+                  : 'text-white hover:text-purple-300 drop-shadow-2xl font-semibold'
+              }`}
             >
               Sign in
             </Button>
@@ -99,12 +111,16 @@ const LandingNavbar = () => {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+          className={`md:hidden p-2 rounded-md transition-colors ${
+            scrolled 
+              ? 'hover:bg-gray-100 dark:hover:bg-neutral-800' 
+              : 'hover:bg-white/10'
+          }`}
         >
           {isMobileMenuOpen ? (
-            <X className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+            <X className={`w-5 h-5 ${scrolled ? 'text-gray-700 dark:text-gray-200' : 'text-white drop-shadow-2xl'}`} />
           ) : (
-            <Menu className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+            <Menu className={`w-5 h-5 ${scrolled ? 'text-gray-700 dark:text-gray-200' : 'text-white drop-shadow-2xl'}`} />
           )}
         </button>
       </div>

@@ -2,9 +2,22 @@ import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
-  { title: "Team Management", desc: "Easily manage team roles and access." },
-  { title: "Real-time Insights", desc: "Track funding rounds and growth metrics." },
-  { title: "Secure Platform", desc: "Enterprise-grade security and reliability." },
+  { 
+    title: "Be first to know", 
+    desc: "Catch new funding rounds, leadership changes, and fast-growing startups before they hit the mainstream." 
+  },
+  { 
+    title: "Target with precision", 
+    desc: "Advanced filters let you zero in on the right industries, geographies, and decision-makers." 
+  },
+  { 
+    title: "Save hours every week", 
+    desc: "Stop manually tracking announcements, scraping LinkedIn, or stitching together spreadsheets." 
+  },
+  { 
+    title: "Gain a competitive edge", 
+    desc: "Build stronger investor relationships and close deals while others are still trying to find the signal." 
+  },
 ];
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
@@ -19,7 +32,7 @@ export default function Features() {
       id="features"
       role="region"
       aria-labelledby="features-title"
-      className="relative w-full min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-gray-900 via-indigo-900 to-black"
+      className="relative w-full min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-gray-900 via-indigo-900 to-black py-16 sm:py-20"
     >
       {/* Overlay for depth */}
       <div className="absolute inset-0 bg-black/40" />
@@ -36,7 +49,7 @@ export default function Features() {
         </div>
 
         <motion.div
-          className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.25 }}

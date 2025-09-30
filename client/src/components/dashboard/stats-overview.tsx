@@ -8,14 +8,14 @@ export function StatsOverview() {
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-card rounded-lg p-6 border border-border shadow-sm">
+          <div key={i} className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-sm">
             <div className="flex items-center">
-              <Skeleton className="h-12 w-12 rounded-lg" />
-              <div className="ml-4 space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg" />
+              <div className="ml-3 sm:ml-4 space-y-2">
+                <Skeleton className="h-3 w-20 sm:h-4 sm:w-24" />
+                <Skeleton className="h-6 w-12 sm:h-8 sm:w-16" />
               </div>
             </div>
           </div>
@@ -27,9 +27,9 @@ export function StatsOverview() {
   // Error state
   if (isError || !stats) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
-          <p className="text-destructive">Failed to load dashboard statistics</p>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
+        <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-sm col-span-2 lg:col-span-4">
+          <p className="text-destructive text-sm sm:text-base">Failed to load dashboard statistics</p>
         </div>
       </div>
     );
@@ -72,22 +72,22 @@ export function StatsOverview() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
       {statCards.map((stat) => {
         const Icon = stat.icon;
         return (
           <div
             key={stat.title}
-            className="bg-card rounded-lg p-6 border border-border shadow-sm"
+            className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-sm"
             data-testid={stat.testId}
           >
             <div className="flex items-center">
               <div className={`p-2 ${stat.iconBg} rounded-lg`}>
                 <Icon className={`hero-icon-lg ${stat.iconColor}`} />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.title}</p>
+                <p className="text-lg sm:text-2xl font-bold text-foreground">{stat.value}</p>
               </div>
             </div>
           </div>

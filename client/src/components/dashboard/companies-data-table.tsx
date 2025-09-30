@@ -294,8 +294,67 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="block lg:hidden">
+        <div className="p-4 space-y-4">
+          {sortedCompanies.slice(startIndex, startIndex + ITEMS_PER_PAGE).map((company) => {
+            const companyDomain = company.domain ? String(company.domain) : null;
+            const initials = (company.company_name || "Unknown")
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2);
+
+            return (
+              <div key={company.id} className="bg-card border border-border rounded-lg p-4 shadow-sm">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-lg flex items-center justify-center font-semibold text-sm">
+                      {initials}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{formatValue(company.company_name)}</h3>
+                      <p className="text-sm text-muted-foreground">{formatValue(company.industry)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setContactingCompany(company)}
+                  >
+                    Contact
+                  </Button>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Funding:</span>
+                    <span className="font-medium">{formatValue(company.funding_amount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Stage:</span>
+                    <span className="font-medium">{formatValue(company.funding_stage)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date:</span>
+                    <span className="font-medium">{formatDate(company.created_at)}</span>
+                  </div>
+                  {companyDomain && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Domain:</span>
+                      <span className="font-medium text-blue-600">{companyDomain}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-x-auto">
         <table className="min-w-full divide-y divide-border table-auto">
           <thead className="bg-muted/30 sticky top-0 z-10">
             <tr>
@@ -537,7 +596,7 @@ export function CompaniesDataTable({ companies, isLoading }: CompaniesDataTableP
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-card px-6 py-3 flex items-center justify-between border-t border-border">
+        <div className="bg-card px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between border-t border-border gap-4">
           <p className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, sortedCompanies.length)} of {sortedCompanies.length} results
           </p>

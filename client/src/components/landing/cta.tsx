@@ -24,7 +24,7 @@ export default function ModernCTA() {
       id="cta"
       role="region"
       aria-labelledby="cta-title"
-      className="relative w-full overflow-hidden min-h-[calc(100vh-var(--landing-header-height))] flex items-center justify-center"
+      className="relative w-full overflow-hidden min-h-[calc(100vh-var(--landing-header-height))] flex items-center justify-center py-16 sm:py-20"
     >
       {/* Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">

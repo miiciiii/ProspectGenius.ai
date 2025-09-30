@@ -52,29 +52,29 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Section */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
               ProspectGenius Dashboard
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               Track newly funded startups and investment opportunities
               {isLimitedUser && totalAvailable > companies.length && (
-                <span className="text-amber-600 ml-2">
+                <span className="text-amber-600 ml-2 block sm:inline">
                   (Showing {companies.length} of {totalAvailable} companies)
                 </span>
               )}
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <SubscriptionGate
               feature="CSV Export"
               description="Export filtered company data to CSV for analysis and reporting"
               showUpgrade={false}
               fallback={
-                <Button variant="outline" disabled>
+                <Button variant="outline" disabled className="w-full sm:w-auto">
                   <Upload className="hero-icon mr-2" />
                   Export CSV (Premium)
                 </Button>
@@ -84,7 +84,7 @@ export default function Dashboard() {
                 onClick={handleExportCSV}
                 disabled={exportCSV.isPending}
                 data-testid="button-export-csv"
-                className="brand-hover-glow">
+                className="w-full sm:w-auto brand-hover-glow">
                 <Upload className="hero-icon mr-2" />
                 {exportCSV.isPending ? "Exporting..." : "Export CSV"}
               </Button>
@@ -93,7 +93,7 @@ export default function Dashboard() {
             <Button
               onClick={handleRefreshData}
               data-testid="button-refresh-data"
-              className="btn-gradient">
+              className="w-full sm:w-auto btn-gradient">
               <RefreshCw className="hero-icon mr-2" />
               Refresh Data
             </Button>
@@ -107,14 +107,14 @@ export default function Dashboard() {
           showUpgrade={false}
           fallback={
             <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center py-6 sm:py-8 text-amber-800">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">
                   Advanced Analytics - Premium Feature
                 </h3>
-                <p className="text-sm mb-4">
+                <p className="text-xs sm:text-sm mb-4 px-2">
                   Get detailed insights and metrics about funding trends
                 </p>
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="w-full sm:w-auto">
                   Upgrade to unlock
                 </Button>
               </div>
@@ -132,14 +132,14 @@ export default function Dashboard() {
           showUpgrade={false}
           fallback={
             <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center py-6 sm:py-8 text-amber-800">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">
                   Daily Highlights - Premium Feature
                 </h3>
-                <p className="text-sm mb-4">
+                <p className="text-xs sm:text-sm mb-4 px-2">
                   Get curated highlights of important funding news
                 </p>
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="w-full sm:w-auto">
                   Upgrade to unlock
                 </Button>
               </div>
@@ -167,14 +167,14 @@ export default function Dashboard() {
           showUpgrade={false}
           fallback={
             <div className="bg-card rounded-lg shadow p-4 border border-border border-dashed border-amber-200">
-              <div className="text-center py-8 text-amber-800">
-                <h3 className="text-lg font-semibold mb-2">
+              <div className="text-center py-6 sm:py-8 text-amber-800">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">
                   Advanced Filtering - Premium Feature
                 </h3>
-                <p className="text-sm mb-4">
+                <p className="text-xs sm:text-sm mb-4 px-2">
                   Filter companies by industry, funding stage, and more
                 </p>
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="w-full sm:w-auto">
                   Upgrade to unlock
                 </Button>
               </div>
