@@ -20,9 +20,11 @@ interface AuthContextType {
   login: (
     credentials: LoginCredentials
   ) => Promise<{ success: boolean; error?: string }>;
-  register: (
-    userData: RegisterData
-  ) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: RegisterData) => Promise<{
+    success: boolean;
+    requiresConfirmation?: boolean;
+    error?: string;
+  }>;
   logout: () => Promise<void>;
   updateProfile: (updates: {
     full_name?: string;
@@ -58,6 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
+        console.log("getCurrentUser:", currentUser);
         if (mounted) {
           setUser(currentUser);
         }
@@ -135,10 +138,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const result = await authService.registerUser(userData);
-      if (result.success && result.user) {
-        setUser(result.user);
-        navigate("/dashboard");
-        return { success: true };
+      if (result.success) {
+        if (result.user) {
+          // User is confirmed and can proceed
+          setUser(result.user);
+          navigate("/dashboard");
+        } else {
+          // User needs email confirmation
+          // Don't set user or navigate - let the UI show the confirmation message
+        }
+        return { success: true, requiresConfirmation: !result.user };
       } else {
         return { success: false, error: result.error || "Registration failed" };
       }
