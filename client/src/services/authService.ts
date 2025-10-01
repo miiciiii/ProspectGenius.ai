@@ -1,4 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
+
+// Simple in-memory cache for profile to avoid repeated backend requests
+let profileCache: Profile | null = null;
+let profileCacheAt: number | null = null;
 import type { Profile } from "@shared/schema";
 
 export interface User {
@@ -231,7 +235,54 @@ export const authService = {
 
   // Logout user
   logoutUser: async (): Promise<void> => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      // Clear in-memory profile cache to avoid reusing previous account's profile
+      profileCache = null;
+      profileCacheAt = null;
+
+      // Remove persisted auth/profile from localStorage if redux-persist stored it
+      try {
+        const key = "persist:root";
+        if (localStorage.getItem(key)) {
+          // Parse to remove auth slice only if present, otherwise remove whole key
+          try {
+            const parsed = JSON.parse(localStorage.getItem(key) as string);
+            if (parsed && parsed.auth) {
+              // Remove just the auth slice to preserve other persisted data
+              delete parsed.auth;
+              localStorage.setItem(key, JSON.stringify(parsed));
+            } else {
+              localStorage.removeItem(key);
+            }
+          } catch (e) {
+            // If parse fails, remove the persisted key entirely
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        // ignore localStorage errors
+        console.warn(
+          "logoutUser: failed to clear persisted auth from localStorage",
+          e
+        );
+      }
+
+      // If a persistor is exposed globally (some apps attach it), try to purge it.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyWin = window as any;
+        if (
+          anyWin.__PERSISTOR__ &&
+          typeof anyWin.__PERSISTOR__.purge === "function"
+        ) {
+          anyWin.__PERSISTOR__.purge();
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
   },
 
   // Get current user
@@ -240,7 +291,6 @@ export const authService = {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      console.log("getCurrentUser: Supabase user:", user);
 
       if (!user) return null;
 
@@ -248,6 +298,7 @@ export const authService = {
       let profile: Profile | null = null;
       try {
         profile = await authService.getCurrentUserProfile();
+        console.log("Fetched profile:", profile);
       } catch (profileError) {
         console.warn(
           "Could not fetch profile, using default role:",
@@ -256,7 +307,7 @@ export const authService = {
       }
 
       return {
-        id: user.id,
+        id: profile?.id || user.id,
         email: user.email!,
         full_name: profile?.full_name || user.user_metadata?.full_name || "",
         role: profile?.role || "guest", // Default to guest if no profile
@@ -272,6 +323,58 @@ export const authService = {
   getCurrentUserProfile: async (): Promise<Profile | null> => {
     console.log("getCurrentUserProfile: Starting profile fetch");
     try {
+      // First try to read persisted profile from redux-persist in localStorage
+      try {
+        const persisted = localStorage.getItem("persist:root");
+        if (persisted) {
+          const parsed = JSON.parse(persisted);
+          if (parsed && parsed.auth) {
+            // auth slice is stored as a JSON string inside the persisted root
+            const auth = JSON.parse(parsed.auth);
+            if (auth && auth.userProfile) {
+              // Only return persisted profile if it matches the current supabase session user
+              try {
+                const {
+                  data: { user: sbUser },
+                } = await supabase.auth.getUser();
+                if (
+                  sbUser &&
+                  (auth.userProfile.id === sbUser.id ||
+                    auth.userProfile.id === (sbUser as any).id)
+                ) {
+                  console.log(
+                    "getCurrentUserProfile: Returning persisted profile from localStorage"
+                  );
+                  return auth.userProfile as Profile;
+                } else {
+                  console.log(
+                    "getCurrentUserProfile: Persisted profile does not match current session, ignoring"
+                  );
+                }
+              } catch (e) {
+                // if we can't get session user, be conservative and ignore persisted
+                console.warn(
+                  "getCurrentUserProfile: Could not verify session user, ignoring persisted profile",
+                  e
+                );
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ignore parse errors and fall back to normal flow
+      }
+
+      // Simple in-memory cache to avoid repeated backend hits in quick succession
+      // TTL is 5 minutes by default
+      const now = Date.now();
+      const TTL = 5 * 60 * 1000;
+      // profileCache and profileCacheAt are module-scoped vars (defined below)
+      if (profileCache && profileCacheAt && now - profileCacheAt < TTL) {
+        console.log("getCurrentUserProfile: Returning cached profile");
+        return profileCache;
+      }
+
       // First check if backend is available
       if (!import.meta.env.VITE_API_URL) {
         console.warn("Backend API URL not configured, using default role");
@@ -282,7 +385,10 @@ export const authService = {
       const response = await apiRequest("GET", "/api/auth/profile");
       const data = await response.json();
       console.log("getCurrentUserProfile: Backend response:", data);
-      return data.user?.profile || null;
+      const fetched = data.user?.profile || null;
+      profileCache = fetched;
+      profileCacheAt = Date.now();
+      return fetched;
     } catch (error) {
       console.warn(
         "Backend not available, using Supabase profile data:",
@@ -295,6 +401,7 @@ export const authService = {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+        console.log("Fallback: Supabase user:", user);
         if (!user) {
           console.log("getCurrentUserProfile: No user found in Supabase");
           return null;
@@ -318,6 +425,8 @@ export const authService = {
         }
 
         console.log("getCurrentUserProfile: Supabase profile result:", profile);
+        profileCache = profile || null;
+        profileCacheAt = Date.now();
         return profile || null;
       } catch (supabaseError) {
         console.warn("Supabase profile fetch failed:", supabaseError);
@@ -433,6 +542,9 @@ export const authService = {
         console.log(
           "onAuthStateChange: No session, calling callback with null"
         );
+        // Clear caches on sign out to avoid stale profile reuse
+        profileCache = null;
+        profileCacheAt = null;
         callback(null);
       }
     });

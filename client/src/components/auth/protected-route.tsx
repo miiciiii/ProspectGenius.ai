@@ -117,6 +117,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback,
 }) => {
   const { user, isLoading } = useAuth();
+  // Determine effective role from user or profile
+  const effectiveRole = (user?.role || (user as any)?.profile?.role) as
+    | User["role"]
+    | undefined;
   const hasRequiredRole = useHasRole(requiredRole || []);
   const location = useLocation();
 
@@ -132,17 +136,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Redirect to landing if not authenticated
   if (!user) {
     // return <Navigate to="/auth/login" state={{ from: location }} replace />;
-        return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // Check role-based access
   if (requiredRole && !hasRequiredRole) {
+    // Debug logging to help diagnose unexpected permission denials
+    try {
+      // eslint-disable-next-line no-console
+      console.warn("ProtectedRoute: access denied", {
+        user,
+        effectiveRole,
+        requiredRole,
+        hasRequiredRole,
+      });
+    } catch (e) {}
     if (fallback) {
       return <>{fallback}</>;
     }
     return (
       <InsufficientPermissions
-        userRole={user.role}
+        userRole={effectiveRole ?? user?.role ?? "guest"}
         requiredRole={requiredRole}
       />
     );
