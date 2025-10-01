@@ -42,6 +42,12 @@ export function Sidebar({ className, isMobileOpen, onMobileClose }: SidebarProps
             icon: Building2,
             premium: false, // Basic access for all users
           },
+          {
+            path: "/administration/waiting-list-data",
+            label: "Waiting List",
+            icon: Database,
+            premium: true, // Premium feature
+          },
         ],
       },
       {

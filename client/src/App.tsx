@@ -32,6 +32,7 @@ import Automations from "@/pages/workflows/automations";
 import Pricing from "@/pages/pricing";
 import SubscriptionManagement from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
+import WaitingListTable from "@/pages/administration/waiting-list-data";
 
 // Landing page
 import LandingPage from "@/pages/landing/landing";
@@ -172,6 +173,14 @@ function App() {
                 element={
                   <AdminRoute>
                     <Billing />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/administration/waiting-list-data"
+                element={
+                  <AdminRoute>
+                    <WaitingListTable />
                   </AdminRoute>
                 }
               />
