@@ -1,16 +1,21 @@
+# Node
 node_modules
-# dist
-# .DS_Store
-# server/public
-# vite.config.ts.*
-*.tar.gz
-
+dist/
 .env*
 
+# Vite/Config
+vite.config.ts
+vite.config.js
+*.tar.gz
 
+# macOS / OS junk
+.DS_Store
+Thumbs.db
+
+# Python (if needed)
 __init__.py*
-
-pycache__/
+__pycache__/
 *.pyc
 
+# Docker (if needed)
 docker/
