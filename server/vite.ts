@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+import viteConfigImported from "../vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -19,16 +19,42 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+/**
+ * Resolve whatever viteConfig exports (object, async fn, or promise).
+ */
+async function resolveViteConfig() {
+  if (!viteConfigImported) return {};
+  if (typeof viteConfigImported === "function") {
+    return await (viteConfigImported as any)();
+  }
+  if (typeof (viteConfigImported as any).then === "function") {
+    return await (viteConfigImported as any);
+  }
+  return viteConfigImported;
+}
+
 export async function setupVite(app: Express, server: Server) {
+  const isProd = process.env.NODE_ENV === "production";
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true as const,
   };
 
+  // Make sure we resolve config properly
+  const resolvedConfig: any = await resolveViteConfig();
+
+  // Ensure root points to client folder if not set in vite.config.ts
+  const defaultClientRoot = path.resolve(import.meta.dirname, "..", "client");
+  const root = resolvedConfig.root || defaultClientRoot;
+
+  log(`Using Vite root: ${root}`, "vite");
+
   const vite = await createViteServer({
-    ...viteConfig,
+    ...resolvedConfig,
     configFile: false,
+    root,
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
@@ -41,6 +67,7 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -53,23 +80,31 @@ export async function setupVite(app: Express, server: Server) {
       );
 
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
+
+      // Add cache-busting only in production
+      if (isProd) {
+        template = template.replace(
+          /src=(['"])\/src\/main\.tsx\1/,
+          (match, q) => `src=${q}/src/main.tsx?v=${nanoid()}${q}`
+        );
+      }
 
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
+      try {
+        vite.ssrFixStacktrace(e as Error);
+      } catch (_) {
+        // ignore if vite isn't ready
+      }
       next(e);
     }
   });
 }
 
 export function serveStatic(app: Express) {
-  // When bundled, import.meta.dirname points to dist/server (or dist)
-  // Our vite.config.ts outputs React build to dist/public
+  // When bundled, import.meta.dirname points to dist/server
+  // React build output goes into dist/public (per vite.config.ts)
   const distPath = path.resolve(import.meta.dirname, "../public");
 
   if (!fs.existsSync(distPath)) {

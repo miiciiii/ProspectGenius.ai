@@ -58,6 +58,8 @@ app.use((req, res, next) => {
 
   // IMPORTANT: bind to 0.0.0.0 instead of localhost
   server.listen(port, "0.0.0.0", () => {
-    log(`Server is running at http://0.0.0.0:${port}`);
+    log(`Production Server is running at http://0.0.0.0:${port}`);
+    log(`For Development, open http://localhost:${port}`);
+    log(`Press CTRL-C to stop\n`);
   });
 })();
