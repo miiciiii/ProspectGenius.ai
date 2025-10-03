@@ -12,11 +12,14 @@ import CompanyArchives from './pages/dashboard/CompanyArchives';
 import AdvancedAnalytics from '@/pages/dashboard/AdvancedAnalytics';
 import EssentialFundingAnalytics from '@/pages/dashboard/EssentialFundingAnalytics';
 import Settings from '@/pages/dashboard/Settings';
-import Billing from '@/pages/dashboard/Billing';
+import Billing from '@/pages/payment/Billing';
 import TeamManagement from '@/pages/dashboard/TeamManagement';
 import NotFound from '@/pages/not-found';
 import WaitingListTable from '@/pages/dashboard/WaitingList';
 import ProtectedRoute from '@/components/auth/protectedRoute';
+
+import StripeSuccess from './pages/payment/StripeSuccess';
+import StripeCancel from './pages/payment/StripeCancel';
 
 function Router() {
   return (
@@ -71,6 +74,22 @@ function Router() {
         <DashboardLayout>
           <ProtectedRoute allowedRoles={["guest", "subscriber", "admin"]}>
             <Billing />
+          </ProtectedRoute>
+        </DashboardLayout>
+      </Route>
+  
+      <Route path="/dashboard/admin/billing/success">
+        <DashboardLayout>
+          <ProtectedRoute allowedRoles={["guest", "subscriber", "admin"]}>
+            <StripeSuccess />
+          </ProtectedRoute>
+        </DashboardLayout>
+      </Route>
+
+      <Route path="/dashboard/admin/billing/cancel">
+        <DashboardLayout>
+          <ProtectedRoute allowedRoles={["guest", "subscriber", "admin"]}>
+            <StripeCancel />
           </ProtectedRoute>
         </DashboardLayout>
       </Route>
