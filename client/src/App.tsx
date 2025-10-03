@@ -4,7 +4,8 @@ import { queryClient } from './lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Landing from '@/pages/Landing';
-import SignIn from '@/pages/SignIn';
+import SignIn from '@/pages/authentication/SignIn';
+import SignUp from '@/pages/authentication/SignUp';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import CompanyReports from '@/pages/dashboard/CompanyReports';
 import CompanyArchives from './pages/dashboard/CompanyArchives';
@@ -23,6 +24,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={Landing} />
       <Route path="/signin" component={SignIn} />
+      <Route path="/signup" component={SignUp} />
 
       {/* Shared routes (everyone can access) */}
       <Route path="/dashboard/reports/company">

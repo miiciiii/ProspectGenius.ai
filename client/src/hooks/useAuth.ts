@@ -19,11 +19,13 @@ export function useAuth() {
     });
 
     // Subscribe to auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("[useAuth] auth state changed:", session);
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        console.log("[useAuth] auth state changed:", session);
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
 
     return () => {
       console.log("[useAuth] cleaning up subscription");
@@ -33,13 +35,39 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     console.log("[useAuth] signing in with:", email);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (!error && data.session?.user) {
       console.log("[useAuth] signIn success:", data.session.user);
       setUser(data.session.user);
       setSession(data.session);
     } else if (error) {
       console.error("[useAuth] signIn error:", error);
+    }
+    return { data, error };
+  };
+
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName?: string
+  ) => {
+    console.log("[useAuth] signing up with:", email);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+      },
+    });
+    if (!error && data.user) {
+      console.log("[useAuth] signUp success:", data.user);
+      setUser(data.user);
+      setSession(data.session ?? null); // may be null if email confirmation required
+    } else if (error) {
+      console.error("[useAuth] signUp error:", error);
     }
     return { data, error };
   };
@@ -51,5 +79,5 @@ export function useAuth() {
     return { error };
   };
 
-  return { user, session, loading, signIn, signOut };
+  return { user, session, loading, signIn, signUp, signOut };
 }
