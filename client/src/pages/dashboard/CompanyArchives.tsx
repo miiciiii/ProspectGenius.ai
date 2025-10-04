@@ -1,4 +1,4 @@
-import React, { useState, useMemo, Fragment, useEffect } from 'react';
+import React, { useState, useMemo, Fragment } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -12,14 +12,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { format } from 'date-fns';
-import {
-  Globe,
-  Linkedin,
-  Twitter,
-  Instagram,
-  Facebook,
-  ArrowUpDown,
-} from 'lucide-react';
+import { Globe, Linkedin, Twitter, Instagram, Facebook, ArrowUpDown, Flame } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import AccessDenied from '@/components/accessDenied';
 
 interface CompanyReport {
   id: string;
@@ -47,6 +43,13 @@ interface CompanyReport {
 
 const PAGE_SIZE = 10;
 
+const PLAN_LIMITS: Record<string, number> = {
+  guest: 25,
+  free: 50,
+  starter: 100,
+  professional: Infinity,
+};
+
 export default function CompanyArchives() {
   const [searchTerm, setSearchTerm] = useState('');
   const [fundingRoundFilter, setFundingRoundFilter] = useState('all');
@@ -55,99 +58,79 @@ export default function CompanyArchives() {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const { user, loading: authLoading } = useAuth();
+  const { role, plan, loading: accessLoading } = useUserAccess(user, authLoading);
+
   const toggleRow = (id: string) => {
-    setExpandedRows(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setExpandedRows(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  // --- Fetch data from Supabase with logs ---
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['/api/company-reports'],
+  const { data: companies, isLoading, error } = useQuery({
+    queryKey: ['company-archives', role, plan],
+    enabled: !accessLoading && !authLoading,
     queryFn: async () => {
-      console.log('Fetching company_reports from Supabase...');
-      const { data, error } = await supabase
+      let query = supabase
         .from('company_reports')
         .select('*')
         .neq('company_name', null)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Supabase fetch error:', error);
-        throw error;
-      }
+      const normalizedRole = role?.toLowerCase() ?? 'guest';
+      const normalizedPlan = plan?.toLowerCase() ?? 'free';
+      const limit = PLAN_LIMITS[normalizedRole === 'guest' ? 'guest' : normalizedPlan];
+      if (limit !== Infinity) query = query.limit(limit);
 
-      console.log('Raw data from Supabase:', data);
+      const { data, error } = await query;
+      if (error) throw error;
 
-      // Convert funding_amount to number
-      const normalizedData = data.map(d => ({
+      return (data ?? []).map(d => ({
         ...d,
         funding_amount: d.funding_amount !== null ? Number(d.funding_amount) : null,
-      }));
-
-      console.log('Normalized data:', normalizedData);
-      return normalizedData as CompanyReport[];
+      })) as CompanyReport[];
     },
     refetchInterval: 30000,
   });
 
-  // --- Debug useEffect ---
-  useEffect(() => {
-    if (isLoading) console.log('Loading data...');
-    if (error) console.error('useQuery error:', error);
-    if (data) console.log('useQuery data:', data);
-  }, [data, error, isLoading]);
-
-  // --- Analytics ---
   const analytics = useMemo(() => {
-    if (!data) return { totalCompanies: 0, totalFunding: 0, totalMarkets: 0, totalNews: 0 };
+    if (!companies) return { totalCompanies: 0, totalFunding: 0, totalMarkets: 0, totalNews: 0, hotLeads: 0 };
 
-    const totalCompanies = data.length;
-    const totalFunding = data.reduce((sum, c) => sum + (c.funding_amount || 0), 0);
-    const totalMarkets = data.reduce((sum, c) => sum + (c.markets?.length || 0), 0);
-    const totalNews = data.filter(c => c.news_url).length;
+    const totalCompanies = companies.length;
+    const totalFunding = companies.reduce((sum, c) => sum + (c.funding_amount || 0), 0);
+    const totalMarkets = companies.reduce((sum, c) => sum + (c.markets?.length || 0), 0);
+    const totalNews = companies.filter(c => c.news_url).length;
+    const hotLeads = companies.filter(c => (c.funding_amount || 0) >= 1e7).length;
 
-    console.log('Analytics:', { totalCompanies, totalFunding, totalMarkets, totalNews });
-    return { totalCompanies, totalFunding, totalMarkets, totalNews };
-  }, [data]);
+    return { totalCompanies, totalFunding, totalMarkets, totalNews, hotLeads };
+  }, [companies]);
 
-  // --- Filter & Sort ---
   const filteredAndSortedCompanies = useMemo(() => {
-    if (!data) return [];
+    if (!companies) return [];
 
-    let filtered = data.filter(company => {
+    const filtered = companies.filter(c => {
       const matchesSearch =
-        company.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.markets?.some(m => m.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesFundingRound = fundingRoundFilter === 'all' || company.funding_round === fundingRoundFilter;
+        c.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.markets?.some(m => m.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesFundingRound = fundingRoundFilter === 'all' || c.funding_round === fundingRoundFilter;
       return matchesSearch && matchesFundingRound;
     });
 
     filtered.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === 'date') {
-        comparison = (new Date(a.funding_date || 0).getTime() - new Date(b.funding_date || 0).getTime());
-      } else if (sortBy === 'amount') {
-        comparison = (a.funding_amount || 0) - (b.funding_amount || 0);
-      } else {
-        comparison = (a.company_name || '').localeCompare(b.company_name || '');
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
+      let cmp = 0;
+      if (sortBy === 'date') cmp = (new Date(a.funding_date || 0).getTime() - new Date(b.funding_date || 0).getTime());
+      else if (sortBy === 'amount') cmp = (a.funding_amount || 0) - (b.funding_amount || 0);
+      else cmp = (a.company_name || '').localeCompare(b.company_name || '');
+      return sortOrder === 'asc' ? cmp : -cmp;
     });
 
-    console.log('Filtered & sorted companies:', filtered);
     return filtered;
-  }, [data, searchTerm, fundingRoundFilter, sortBy, sortOrder]);
+  }, [companies, searchTerm, fundingRoundFilter, sortBy, sortOrder]);
 
-  // --- Pagination ---
   const paginatedCompanies = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    const pageData = filteredAndSortedCompanies.slice(start, start + PAGE_SIZE);
-    console.log(`Paginated data (page ${currentPage}):`, pageData);
-    return pageData;
+    return filteredAndSortedCompanies.slice(start, start + PAGE_SIZE);
   }, [filteredAndSortedCompanies, currentPage]);
 
-  const totalPages = useMemo(() => Math.ceil(filteredAndSortedCompanies.length / PAGE_SIZE) || 1, [filteredAndSortedCompanies]);
+  const totalPages = Math.ceil(filteredAndSortedCompanies.length / PAGE_SIZE) || 1;
 
   const formatAmount = (amount: number | null) => {
     if (!amount) return 'N/A';
@@ -157,14 +140,20 @@ export default function CompanyArchives() {
     return `$${amount}`;
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error fetching data: {JSON.stringify(error)}</div>;
+  if (authLoading || accessLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading access...
+      </div>
+    );
+  }
+
+  if (!role || !plan) return <AccessDenied />;
 
   return (
     <div className="relative min-h-screen p-8 bg-gray-50 text-gray-900">
-
       {/* --- Analytics Cards --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card className="p-4 bg-white shadow rounded-xl flex flex-col items-start">
           <span className="text-gray-500 text-sm">Total Companies</span>
           <span className="text-2xl font-bold">{analytics.totalCompanies}</span>
@@ -180,6 +169,12 @@ export default function CompanyArchives() {
         <Card className="p-4 bg-white shadow rounded-xl flex flex-col items-start">
           <span className="text-gray-500 text-sm">News Entries</span>
           <span className="text-2xl font-bold">{analytics.totalNews}</span>
+        </Card>
+        <Card className="p-4 bg-white shadow rounded-xl flex flex-col items-start">
+          <span className="text-gray-500 text-sm flex items-center gap-1">
+            Hot Leads <Flame className="w-4 h-4 text-orange-500" />
+          </span>
+          <span className="text-2xl font-bold">{analytics.hotLeads}</span>
         </Card>
       </div>
 
@@ -215,7 +210,10 @@ export default function CompanyArchives() {
               <SelectItem value="name">Name</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+          <Button
+            variant="outline"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          >
             <ArrowUpDown className="w-4 h-4 mr-2" />
             {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
           </Button>
@@ -239,17 +237,32 @@ export default function CompanyArchives() {
           <tbody>
             {paginatedCompanies.map(company => {
               const isExpanded = expandedRows.includes(company.id);
+              const isHotLead = (company.funding_amount || 0) >= 1e7;
               return (
                 <Fragment key={company.id}>
                   <tr className={`${isExpanded ? 'bg-gray-50' : ''}`}>
-                    <td className="px-4 py-2 font-semibold">{company.company_name}</td>
+                    <td className="px-4 py-2 font-semibold flex items-center gap-1">
+                      {company.company_name}
+                      {isHotLead && <Flame className="w-4 h-4 text-orange-500" />}
+                    </td>
                     <td className="px-4 py-2">{company.funding_round || 'N/A'}</td>
-                    <td className="px-4 py-2">{company.funding_date ? format(new Date(company.funding_date), 'MMM dd, yyyy') : 'N/A'}</td>
+                    <td className="px-4 py-2">
+                      {company.funding_date
+                        ? format(new Date(company.funding_date), 'MMM dd, yyyy')
+                        : 'N/A'}
+                    </td>
                     <td className="px-4 py-2">{formatAmount(company.funding_amount)}</td>
                     <td className="px-4 py-2">{company.markets?.join(', ') || 'N/A'}</td>
-                    <td className="px-4 py-2">{company.investors?.slice(0,2).join(', ')}{company.investors && company.investors.length > 2 ? ` +${company.investors.length-2} more` : ''}</td>
+                    <td className="px-4 py-2">
+                      {company.investors?.slice(0, 2).join(', ')}
+                      {company.investors && company.investors.length > 2
+                        ? ` +${company.investors.length - 2} more`
+                        : ''}
+                    </td>
                     <td className="px-4 py-2 flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => toggleRow(company.id)}>DETAILS</Button>
+                      <Button size="sm" variant="outline" onClick={() => toggleRow(company.id)}>
+                        DETAILS
+                      </Button>
                     </td>
                   </tr>
 
@@ -259,21 +272,68 @@ export default function CompanyArchives() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {company.description && (
                             <div>
-                              <h3 className="font-semibold text-lg border-b border-gray-300 pb-1 mb-2">Description</h3>
+                              <h3 className="font-semibold text-lg border-b border-gray-300 pb-1 mb-2">
+                                Description
+                              </h3>
                               <p>{company.description}</p>
                             </div>
                           )}
 
                           <div className="flex flex-col gap-2">
                             {company.website && (
-                              <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline text-blue-600">
+                              <a
+                                href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline text-blue-600"
+                              >
                                 <Globe className="w-4 h-4" /> Website
                               </a>
                             )}
-                            {company.linkedin && <a href={company.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline"><Linkedin className="w-4 h-4" />LinkedIn</a>}
-                            {company.twitter && <a href={company.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline"><Twitter className="w-4 h-4" />Twitter</a>}
-                            {company.instagram && <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline"><Instagram className="w-4 h-4" />Instagram</a>}
-                            {company.facebook && <a href={company.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 underline"><Facebook className="w-4 h-4" />Facebook</a>}
+                            {company.linkedin && (
+                              <a
+                                href={company.linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline"
+                              >
+                                <Linkedin className="w-4 h-4" />
+                                LinkedIn
+                              </a>
+                            )}
+                            {company.twitter && (
+                              <a
+                                href={company.twitter}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline"
+                              >
+                                <Twitter className="w-4 h-4" />
+                                Twitter
+                              </a>
+                            )}
+                            {company.instagram && (
+                              <a
+                                href={company.instagram}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline"
+                              >
+                                <Instagram className="w-4 h-4" />
+                                Instagram
+                              </a>
+                            )}
+                            {company.facebook && (
+                              <a
+                                href={company.facebook}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline"
+                              >
+                                <Facebook className="w-4 h-4" />
+                                Facebook
+                              </a>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -287,9 +347,15 @@ export default function CompanyArchives() {
 
         {/* Pagination */}
         <div className="flex justify-end items-center gap-4 mt-4 p-4">
-          <Button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
-          <span className="text-gray-700">Page {currentPage} of {totalPages}</span>
-          <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+          <Button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+            Previous
+          </Button>
+          <span className="text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+            Next
+          </Button>
         </div>
       </Card>
     </div>

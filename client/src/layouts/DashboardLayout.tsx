@@ -1,38 +1,12 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { ReactNode } from "react";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, loading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  console.log("[DashboardLayout] user:", user, "loading:", loading);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log("[DashboardLayout] No user, redirecting to /signin");
-      setLocation("/signin");
-    }
-  }, [user, loading, setLocation]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null; // prevents rendering if no user
-  }
-
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",

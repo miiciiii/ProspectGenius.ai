@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import Pricing from "@/components/landing/Pricing";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,25 +18,33 @@ interface BillingData {
 }
 
 export default function Billing() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { plan, loading: accessLoading } = useUserAccess(user, authLoading);
+
   const [billing, setBilling] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || accessLoading || !user) return;
 
-    const fetchBilling = async () => {
+    let mounted = true;
+
+    const fetchBillingDetails = async () => {
       try {
         const { data: subscription } = await supabase
           .from("subscriptions")
           .select("*")
           .eq("user_id", user.id)
-          .single();
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (!subscription) {
+          if (!mounted) return;
           setBilling({
-            currentPlan: "Free",
+            currentPlan: plan || "Free",
             billingCycle: "Monthly",
             amount: "$0.00",
             nextBilling: "N/A",
@@ -45,33 +54,44 @@ export default function Billing() {
           return;
         }
 
-        const { data: plan } = await supabase
+        const { data: planData } = await supabase
           .from("plans")
           .select("*")
           .eq("id", subscription.plan_id)
           .single();
 
+        if (!mounted) return;
         setBilling({
-          currentPlan: plan?.name || "Unknown",
+          currentPlan: planData?.name || plan || "Unknown",
           billingCycle: "Monthly",
-          amount: plan?.price ? `$${plan.price.toFixed(2)}` : "$0.00",
+          amount: planData?.price ? `$${planData.price.toFixed(2)}` : "$0.00",
           nextBilling: subscription.end_date
             ? new Date(subscription.end_date).toLocaleDateString()
             : "N/A",
-          features: plan?.features || [],
+          features: planData?.features || [],
         });
-
         setLoading(false);
-      } catch (error) {
-        console.error("Error fetching billing:", error);
+      } catch (err) {
+        console.error("Error fetching billing details:", err);
+        if (!mounted) return;
+        setBilling({
+          currentPlan: plan || "Free",
+          billingCycle: "Monthly",
+          amount: "$0.00",
+          nextBilling: "N/A",
+          features: [],
+        });
         setLoading(false);
       }
     };
 
-    fetchBilling();
-  }, [user]);
+    fetchBillingDetails();
+    return () => {
+      mounted = false;
+    };
+  }, [user, plan, authLoading, accessLoading]);
 
-  if (loading) return <p>Loading billing info...</p>;
+  if (authLoading || accessLoading || loading) return <p>Loading billing info...</p>;
   if (!billing) return null;
 
   return (
@@ -148,7 +168,6 @@ export default function Billing() {
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.35 }}
             >
-              {/* Close Button inside padding-safe area */}
               <div className="absolute top-0 right-0 p-4 z-50">
                 <Button
                   variant="ghost"
@@ -160,7 +179,6 @@ export default function Billing() {
                 </Button>
               </div>
 
-              {/* Pricing content fills modal */}
               <div className="flex-1 w-full h-full overflow-auto">
                 <Pricing fullscreen />
               </div>
